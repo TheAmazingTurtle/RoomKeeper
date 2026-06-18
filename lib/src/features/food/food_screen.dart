@@ -329,6 +329,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                validator: _optionalPositiveNumberValidator,
               ),
               const SizedBox(height: 12),
               ListTile(
@@ -362,8 +363,18 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
   }
 
   String? _positiveNumberValidator(String? value) {
-    final parsed = double.tryParse(value ?? '');
-    return parsed == null || parsed <= 0 ? 'Use a positive number' : null;
+    final parsed = parseFlexibleNumber(value ?? '');
+    return parsed == null || !parsed.isFinite || parsed <= 0
+        ? 'Use a positive number'
+        : null;
+  }
+
+  String? _optionalPositiveNumberValidator(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final parsed = parseFlexibleNumber(value);
+    return parsed == null || !parsed.isFinite || parsed <= 0
+        ? 'Use a positive number or leave blank'
+        : null;
   }
 
   Future<void> _pickExpiry() async {
@@ -385,7 +396,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
     }
     final lowStock = _lowStockController.text.trim().isEmpty
         ? null
-        : double.tryParse(_lowStockController.text);
+        : parseFlexibleNumber(_lowStockController.text);
     final food = widget.food;
     if (food == null) {
       await ref
@@ -394,7 +405,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
             name: _nameController.text,
             areaId: _areaId,
             category: _categoryController.text,
-            quantity: double.parse(_quantityController.text),
+            quantity: parseFlexibleNumber(_quantityController.text)!,
             unit: _unitController.text,
             expiryDate: _expiryDate,
             lowStockThreshold: lowStock,
@@ -410,7 +421,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
               category: _categoryController.text.trim().isEmpty
                   ? 'Pantry'
                   : _categoryController.text.trim(),
-              quantity: double.parse(_quantityController.text),
+              quantity: parseFlexibleNumber(_quantityController.text)!,
               unit: _unitController.text.trim().isEmpty
                   ? 'pcs'
                   : _unitController.text.trim(),

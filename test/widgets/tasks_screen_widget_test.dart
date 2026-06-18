@@ -128,7 +128,15 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pump();
 
-    expect(find.text('Enter an amount'), findsOneWidget);
+    expect(find.text('Enter a positive amount'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, '0');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    expect(find.text('Enter a positive amount'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, '-10');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    expect(find.text('Enter a positive amount'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Cancel'));

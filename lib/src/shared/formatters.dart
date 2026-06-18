@@ -32,6 +32,10 @@ int parsePesoToCents(String value) {
   return ((parsed ?? 0) * 100).round();
 }
 
+double? parseFlexibleNumber(String value) {
+  return double.tryParse(value.replaceAll(',', '').trim());
+}
+
 String compactQuantity(double value) {
   if (value == value.roundToDouble()) {
     return value.toInt().toString();

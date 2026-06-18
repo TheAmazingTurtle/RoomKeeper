@@ -490,9 +490,12 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                validator: (value) => double.tryParse(value ?? '') == null
-                    ? 'Enter an amount'
-                    : null,
+                validator: (value) {
+                  final parsed = parseFlexibleNumber(value ?? '');
+                  return parsed == null || !parsed.isFinite || parsed <= 0
+                      ? 'Enter a positive amount'
+                      : null;
+                },
               ),
               const SizedBox(height: 12),
               _DateActionTile(
