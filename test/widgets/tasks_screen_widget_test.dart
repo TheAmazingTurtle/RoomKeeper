@@ -54,4 +54,42 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('laundry log dialog opens and cancels without date crash', (
+    tester,
+  ) async {
+    await initializeDateFormatting('en_PH');
+    await tester.binding.setSurfaceSize(const Size(800, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          todosProvider.overrideWithValue(const AsyncValue.data(<TodoItem>[])),
+          laundryProvider.overrideWithValue(
+            const AsyncValue.data(<LaundryLog>[]),
+          ),
+          paymentsProvider.overrideWithValue(
+            const AsyncValue.data(<PaymentLog>[]),
+          ),
+        ],
+        child: const MaterialApp(home: TasksScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Laundry'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log laundry'));
+    await tester.pump();
+
+    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Next reminder'), findsOneWidget);
+    expect(find.text('No reminder'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
