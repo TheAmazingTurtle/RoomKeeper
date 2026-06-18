@@ -79,4 +79,72 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('add room area dialog handles interactions and cancel safely', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final layout = RoomLayout(
+      id: 1,
+      name: 'My Room',
+      width: 360,
+      height: 520,
+      gridSize: 20,
+      updatedAt: DateTime(2026),
+    );
+    const kitchenArea = Area(
+      id: 1,
+      name: 'Kitchen',
+      type: 'kitchen',
+      colorHex: '#F97316',
+      sortOrder: 0,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          primaryLayoutProvider.overrideWithValue(AsyncValue.data(layout)),
+          areasProvider.overrideWithValue(const AsyncValue.data([kitchenArea])),
+          inventoryProvider.overrideWithValue(const AsyncValue.data([])),
+          layoutObjectsProvider(
+            layout.id,
+          ).overrideWithValue(const AsyncValue.data([])),
+        ],
+        child: const MaterialApp(home: RoomScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Room area').first);
+    await tester.pump();
+    expect(find.text('Add room area'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).first, 'Window nook');
+    await tester.tap(find.text('Zone'));
+    await tester.pump();
+    await tester.tap(find.text('Storage').last);
+    await tester.pump();
+
+    await tester.tap(find.text('None'));
+    await tester.pump();
+    await tester.tap(find.text('Kitchen').last);
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Use color #F97316'));
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextFormField).first, '');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    expect(find.text('Required'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Add room area'), findsNothing);
+  });
 }

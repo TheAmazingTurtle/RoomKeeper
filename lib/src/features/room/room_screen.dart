@@ -436,31 +436,32 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: _linkedAreaId,
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _areaDropdownValue(_linkedAreaId),
                     decoration: const InputDecoration(labelText: 'Linked area'),
                     items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
+                      const DropdownMenuItem<int>(
+                        value: _noLinkedAreaValue,
                         child: Text('None'),
                       ),
                       ...widget.areas.map(
-                        (area) => DropdownMenuItem<int?>(
+                        (area) => DropdownMenuItem<int>(
                           value: area.id,
                           child: Text(area.name),
                         ),
                       ),
                     ],
                     onChanged: (value) {
+                      final linkedAreaId = _linkedAreaIdFromDropdown(value);
                       Area? area;
                       for (final candidate in widget.areas) {
-                        if (candidate.id == value) {
+                        if (candidate.id == linkedAreaId) {
                           area = candidate;
                           break;
                         }
                       }
                       setState(() {
-                        _linkedAreaId = value;
+                        _linkedAreaId = linkedAreaId;
                         _colorHex = area?.colorHex ?? _colorHex;
                       });
                     },
@@ -720,31 +721,32 @@ class _LayoutObjectDialogState extends ConsumerState<_LayoutObjectDialog> {
                 onChanged: (value) => setState(() => _kind = value ?? _kind),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int?>(
-                initialValue: _linkedAreaId,
+              DropdownButtonFormField<int>(
+                initialValue: _areaDropdownValue(_linkedAreaId),
                 decoration: const InputDecoration(labelText: 'Linked area'),
                 items: [
-                  const DropdownMenuItem<int?>(
-                    value: null,
+                  const DropdownMenuItem<int>(
+                    value: _noLinkedAreaValue,
                     child: Text('None'),
                   ),
                   ...widget.areas.map(
-                    (area) => DropdownMenuItem<int?>(
+                    (area) => DropdownMenuItem<int>(
                       value: area.id,
                       child: Text(area.name),
                     ),
                   ),
                 ],
                 onChanged: (value) {
+                  final linkedAreaId = _linkedAreaIdFromDropdown(value);
                   Area? area;
                   for (final candidate in widget.areas) {
-                    if (candidate.id == value) {
+                    if (candidate.id == linkedAreaId) {
                       area = candidate;
                       break;
                     }
                   }
                   setState(() {
-                    _linkedAreaId = value;
+                    _linkedAreaId = linkedAreaId;
                     _colorHex = area?.colorHex ?? _colorHex;
                   });
                 },
@@ -789,6 +791,16 @@ const _kindOptions = [
   DropdownMenuItem(value: 'storage', child: Text('Storage')),
   DropdownMenuItem(value: 'fixture', child: Text('Fixture')),
 ];
+
+const _noLinkedAreaValue = -1;
+
+int _areaDropdownValue(int? linkedAreaId) {
+  return linkedAreaId ?? _noLinkedAreaValue;
+}
+
+int? _linkedAreaIdFromDropdown(int? value) {
+  return value == null || value == _noLinkedAreaValue ? null : value;
+}
 
 String _kindLabel(String value) {
   return switch (value) {
