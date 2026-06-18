@@ -53,6 +53,21 @@ class LaundryLogs extends Table {
   DateTimeColumn get nextReminderAt => dateTime().nullable()();
 }
 
+class LaundryBasketItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 80)();
+  IntColumn get count => integer().withDefault(const Constant(0))();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {name},
+  ];
+}
+
 class PaymentLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get billType => text().withDefault(const Constant('rent'))();
@@ -130,6 +145,7 @@ class Reminders extends Table {
     InventoryItems,
     FoodStocks,
     LaundryLogs,
+    LaundryBasketItems,
     PaymentLogs,
     TodoItems,
     RoomLayouts,
@@ -142,7 +158,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -150,6 +166,9 @@ class AppDatabase extends _$AppDatabase {
     onUpgrade: (Migrator migrator, int from, int to) async {
       if (from < 2) {
         await migrator.createTable(layoutCells);
+      }
+      if (from < 3) {
+        await migrator.createTable(laundryBasketItems);
       }
     },
     beforeOpen: (OpeningDetails details) async {

@@ -1869,6 +1869,455 @@ class LaundryLogsCompanion extends UpdateCompanion<LaundryLog> {
   }
 }
 
+class $LaundryBasketItemsTable extends LaundryBasketItems
+    with TableInfo<$LaundryBasketItemsTable, LaundryBasketItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LaundryBasketItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 80,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    count,
+    isDefault,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'laundry_basket_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LaundryBasketItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {name},
+  ];
+  @override
+  LaundryBasketItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LaundryBasketItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LaundryBasketItemsTable createAlias(String alias) {
+    return $LaundryBasketItemsTable(attachedDatabase, alias);
+  }
+}
+
+class LaundryBasketItem extends DataClass
+    implements Insertable<LaundryBasketItem> {
+  final int id;
+  final String name;
+  final int count;
+  final bool isDefault;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const LaundryBasketItem({
+    required this.id,
+    required this.name,
+    required this.count,
+    required this.isDefault,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['count'] = Variable<int>(count);
+    map['is_default'] = Variable<bool>(isDefault);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LaundryBasketItemsCompanion toCompanion(bool nullToAbsent) {
+    return LaundryBasketItemsCompanion(
+      id: Value(id),
+      name: Value(name),
+      count: Value(count),
+      isDefault: Value(isDefault),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LaundryBasketItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LaundryBasketItem(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      count: serializer.fromJson<int>(json['count']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'count': serializer.toJson<int>(count),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LaundryBasketItem copyWith({
+    int? id,
+    String? name,
+    int? count,
+    bool? isDefault,
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => LaundryBasketItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    count: count ?? this.count,
+    isDefault: isDefault ?? this.isDefault,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LaundryBasketItem copyWithCompanion(LaundryBasketItemsCompanion data) {
+    return LaundryBasketItem(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      count: data.count.present ? data.count.value : this.count,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LaundryBasketItem(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('count: $count, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, count, isDefault, sortOrder, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LaundryBasketItem &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.count == this.count &&
+          other.isDefault == this.isDefault &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LaundryBasketItemsCompanion extends UpdateCompanion<LaundryBasketItem> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<int> count;
+  final Value<bool> isDefault;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const LaundryBasketItemsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.count = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  LaundryBasketItemsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.count = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LaundryBasketItem> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<int>? count,
+    Expression<bool>? isDefault,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (count != null) 'count': count,
+      if (isDefault != null) 'is_default': isDefault,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  LaundryBasketItemsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<int>? count,
+    Value<bool>? isDefault,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return LaundryBasketItemsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      count: count ?? this.count,
+      isDefault: isDefault ?? this.isDefault,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LaundryBasketItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('count: $count, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PaymentLogsTable extends PaymentLogs
     with TableInfo<$PaymentLogsTable, PaymentLog> {
   @override
@@ -4880,6 +5329,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $InventoryItemsTable inventoryItems = $InventoryItemsTable(this);
   late final $FoodStocksTable foodStocks = $FoodStocksTable(this);
   late final $LaundryLogsTable laundryLogs = $LaundryLogsTable(this);
+  late final $LaundryBasketItemsTable laundryBasketItems =
+      $LaundryBasketItemsTable(this);
   late final $PaymentLogsTable paymentLogs = $PaymentLogsTable(this);
   late final $TodoItemsTable todoItems = $TodoItemsTable(this);
   late final $RoomLayoutsTable roomLayouts = $RoomLayoutsTable(this);
@@ -4895,6 +5346,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     inventoryItems,
     foodStocks,
     laundryLogs,
+    laundryBasketItems,
     paymentLogs,
     todoItems,
     roomLayouts,
@@ -6389,6 +6841,251 @@ typedef $$LaundryLogsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $LaundryLogsTable, LaundryLog>,
       ),
       LaundryLog,
+      PrefetchHooks Function()
+    >;
+typedef $$LaundryBasketItemsTableCreateCompanionBuilder =
+    LaundryBasketItemsCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<int> count,
+      Value<bool> isDefault,
+      Value<int> sortOrder,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+    });
+typedef $$LaundryBasketItemsTableUpdateCompanionBuilder =
+    LaundryBasketItemsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<int> count,
+      Value<bool> isDefault,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$LaundryBasketItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $LaundryBasketItemsTable> {
+  $$LaundryBasketItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LaundryBasketItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LaundryBasketItemsTable> {
+  $$LaundryBasketItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LaundryBasketItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LaundryBasketItemsTable> {
+  $$LaundryBasketItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LaundryBasketItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LaundryBasketItemsTable,
+          LaundryBasketItem,
+          $$LaundryBasketItemsTableFilterComposer,
+          $$LaundryBasketItemsTableOrderingComposer,
+          $$LaundryBasketItemsTableAnnotationComposer,
+          $$LaundryBasketItemsTableCreateCompanionBuilder,
+          $$LaundryBasketItemsTableUpdateCompanionBuilder,
+          (
+            LaundryBasketItem,
+            BaseReferences<
+              _$AppDatabase,
+              $LaundryBasketItemsTable,
+              LaundryBasketItem
+            >,
+          ),
+          LaundryBasketItem,
+          PrefetchHooks Function()
+        > {
+  $$LaundryBasketItemsTableTableManager(
+    _$AppDatabase db,
+    $LaundryBasketItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LaundryBasketItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LaundryBasketItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LaundryBasketItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> count = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => LaundryBasketItemsCompanion(
+                id: id,
+                name: name,
+                count: count,
+                isDefault: isDefault,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<int> count = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+              }) => LaundryBasketItemsCompanion.insert(
+                id: id,
+                name: name,
+                count: count,
+                isDefault: isDefault,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LaundryBasketItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LaundryBasketItemsTable,
+      LaundryBasketItem,
+      $$LaundryBasketItemsTableFilterComposer,
+      $$LaundryBasketItemsTableOrderingComposer,
+      $$LaundryBasketItemsTableAnnotationComposer,
+      $$LaundryBasketItemsTableCreateCompanionBuilder,
+      $$LaundryBasketItemsTableUpdateCompanionBuilder,
+      (
+        LaundryBasketItem,
+        BaseReferences<
+          _$AppDatabase,
+          $LaundryBasketItemsTable,
+          LaundryBasketItem
+        >,
+      ),
+      LaundryBasketItem,
       PrefetchHooks Function()
     >;
 typedef $$PaymentLogsTableCreateCompanionBuilder =
@@ -8625,6 +9322,8 @@ class $AppDatabaseManager {
       $$FoodStocksTableTableManager(_db, _db.foodStocks);
   $$LaundryLogsTableTableManager get laundryLogs =>
       $$LaundryLogsTableTableManager(_db, _db.laundryLogs);
+  $$LaundryBasketItemsTableTableManager get laundryBasketItems =>
+      $$LaundryBasketItemsTableTableManager(_db, _db.laundryBasketItems);
   $$PaymentLogsTableTableManager get paymentLogs =>
       $$PaymentLogsTableTableManager(_db, _db.paymentLogs);
   $$TodoItemsTableTableManager get todoItems =>

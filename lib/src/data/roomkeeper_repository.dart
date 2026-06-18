@@ -16,6 +16,8 @@ const defaultAreaSpecs = [
   ('Desk', 'desk', '#3B82F6'),
 ];
 
+const defaultLaundryBasketItems = ['Shirt', 'Underwear', 'Shorts', 'Pants'];
+
 class RoomkeeperRepository {
   RoomkeeperRepository(this.db);
 
@@ -69,6 +71,7 @@ class RoomkeeperRepository {
       db.roomLayouts,
     )..limit(1)).getSingleOrNull();
     if (hasLayout != null) {
+      await ensureLaundryBasketDefaults();
       return;
     }
 
@@ -131,6 +134,32 @@ class RoomkeeperRepository {
           zOrder: const Value(4),
         ),
       ]);
+    });
+    await ensureLaundryBasketDefaults();
+  }
+
+  Future<void> ensureLaundryBasketDefaults() async {
+    final existing = await db.select(db.laundryBasketItems).get();
+    final existingNames = {
+      for (final item in existing) item.name.trim().toLowerCase(),
+    };
+    final now = DateTime.now();
+    await db.batch((batch) {
+      for (var index = 0; index < defaultLaundryBasketItems.length; index++) {
+        final name = defaultLaundryBasketItems[index];
+        if (existingNames.contains(name.toLowerCase())) continue;
+        batch.insert(
+          db.laundryBasketItems,
+          LaundryBasketItemsCompanion.insert(
+            name: name,
+            isDefault: const Value(true),
+            sortOrder: Value(index),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
     });
   }
 
@@ -337,6 +366,71 @@ class RoomkeeperRepository {
   Future<void> deleteLaundryLog(int id) {
     return (db.delete(
       db.laundryLogs,
+    )..where((table) => table.id.equals(id))).go();
+  }
+
+  Stream<List<LaundryBasketItem>> watchLaundryBasketItems() {
+    final query = db.select(db.laundryBasketItems)
+      ..orderBy([
+        (table) => OrderingTerm(expression: table.sortOrder),
+        (table) => OrderingTerm(expression: table.name),
+      ]);
+    return query.watch();
+  }
+
+  Future<List<LaundryBasketItem>> getLaundryBasketItems() {
+    return (db.select(db.laundryBasketItems)..orderBy([
+          (table) => OrderingTerm(expression: table.sortOrder),
+          (table) => OrderingTerm(expression: table.name),
+        ]))
+        .get();
+  }
+
+  Future<int> addLaundryBasketItem(String name) async {
+    final count = await db
+        .select(db.laundryBasketItems)
+        .get()
+        .then((rows) => rows.length);
+    final now = DateTime.now();
+    return db
+        .into(db.laundryBasketItems)
+        .insert(
+          LaundryBasketItemsCompanion.insert(
+            name: name.trim(),
+            sortOrder: Value(count),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
+  Future<void> changeLaundryBasketCount(LaundryBasketItem item, int delta) {
+    final next = (item.count + delta).clamp(0, 999).toInt();
+    return (db.update(
+      db.laundryBasketItems,
+    )..where((table) => table.id.equals(item.id))).write(
+      LaundryBasketItemsCompanion(
+        count: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> resetLaundryBasketCounts() {
+    return db
+        .update(db.laundryBasketItems)
+        .write(
+          LaundryBasketItemsCompanion(
+            count: const Value(0),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
+  Future<void> deleteLaundryBasketItem(int id) {
+    return (db.delete(
+      db.laundryBasketItems,
     )..where((table) => table.id.equals(id))).go();
   }
 

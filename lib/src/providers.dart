@@ -58,6 +58,10 @@ final laundryProvider = StreamProvider<List<LaundryLog>>((ref) {
   return ref.watch(repositoryProvider).watchLaundryLogs();
 });
 
+final laundryBasketProvider = StreamProvider<List<LaundryBasketItem>>((ref) {
+  return ref.watch(repositoryProvider).watchLaundryBasketItems();
+});
+
 final paymentsProvider = StreamProvider<List<PaymentLog>>((ref) {
   return ref.watch(repositoryProvider).watchPaymentLogs();
 });

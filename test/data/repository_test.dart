@@ -34,6 +34,10 @@ void main() {
 
     expect(await repository.getInventoryItems(), hasLength(1));
     expect(await repository.getFoodStocks(), hasLength(1));
+    expect(
+      (await repository.getLaundryBasketItems()).map((item) => item.name),
+      containsAll(defaultLaundryBasketItems),
+    );
     expect(await repository.getPrimaryLayout(), isNotNull);
   });
 
@@ -196,6 +200,39 @@ void main() {
     await repository.deletePaymentLog(paymentId);
     payments = await repository.getPaymentLogs();
     expect(payments, isEmpty);
+  });
+
+  test('repository manages laundry basket counters', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+
+    await repository.ensureLaundryBasketDefaults();
+    var items = await repository.getLaundryBasketItems();
+    expect(items.map((item) => item.name), [
+      'Shirt',
+      'Underwear',
+      'Shorts',
+      'Pants',
+    ]);
+
+    await repository.changeLaundryBasketCount(items.first, 1);
+    await repository.changeLaundryBasketCount(
+      (await repository.getLaundryBasketItems()).first,
+      -5,
+    );
+    items = await repository.getLaundryBasketItems();
+    expect(items.first.count, 0);
+
+    await repository.changeLaundryBasketCount(items.first, 3);
+    await repository.addLaundryBasketItem('Hanky');
+    items = await repository.getLaundryBasketItems();
+    expect(items.map((item) => item.name), contains('Hanky'));
+    expect(items.first.count, 3);
+
+    await repository.resetLaundryBasketCounts();
+    items = await repository.getLaundryBasketItems();
+    expect(items.every((item) => item.count == 0), isTrue);
   });
 
   test(
