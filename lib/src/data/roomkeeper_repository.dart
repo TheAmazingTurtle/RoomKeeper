@@ -304,6 +304,40 @@ class RoomkeeperRepository {
         );
   }
 
+  Future<List<LaundryLog>> getLaundryLogs() {
+    final query = db.select(db.laundryLogs)
+      ..orderBy([
+        (table) => OrderingTerm(
+          expression: table.completedAt,
+          mode: OrderingMode.desc,
+        ),
+      ]);
+    return query.get();
+  }
+
+  Future<void> updateLaundryLog({
+    required int id,
+    required DateTime completedAt,
+    DateTime? nextReminderAt,
+    String? notes,
+  }) {
+    return (db.update(
+      db.laundryLogs,
+    )..where((table) => table.id.equals(id))).write(
+      LaundryLogsCompanion(
+        completedAt: Value(completedAt),
+        nextReminderAt: Value<DateTime?>(nextReminderAt),
+        notes: Value<String?>(notes?.trim().isEmpty ?? true ? null : notes),
+      ),
+    );
+  }
+
+  Future<void> deleteLaundryLog(int id) {
+    return (db.delete(
+      db.laundryLogs,
+    )..where((table) => table.id.equals(id))).go();
+  }
+
   Stream<List<PaymentLog>> watchPaymentLogs() {
     final query = db.select(db.paymentLogs)
       ..orderBy([
@@ -333,6 +367,44 @@ class RoomkeeperRepository {
             nextReminderAt: Value<DateTime?>(nextReminderAt),
           ),
         );
+  }
+
+  Future<List<PaymentLog>> getPaymentLogs() {
+    final query = db.select(db.paymentLogs)
+      ..orderBy([
+        (table) =>
+            OrderingTerm(expression: table.paidAt, mode: OrderingMode.desc),
+      ]);
+    return query.get();
+  }
+
+  Future<void> updatePaymentLog({
+    required int id,
+    required String billType,
+    required String billingMonth,
+    required DateTime paidAt,
+    required int amountCents,
+    DateTime? nextReminderAt,
+    String? notes,
+  }) {
+    return (db.update(
+      db.paymentLogs,
+    )..where((table) => table.id.equals(id))).write(
+      PaymentLogsCompanion(
+        billType: Value(billType),
+        billingMonth: Value(billingMonth),
+        paidAt: Value(paidAt),
+        amountCents: Value(amountCents),
+        notes: Value<String?>(notes?.trim().isEmpty ?? true ? null : notes),
+        nextReminderAt: Value<DateTime?>(nextReminderAt),
+      ),
+    );
+  }
+
+  Future<void> deletePaymentLog(int id) {
+    return (db.delete(
+      db.paymentLogs,
+    )..where((table) => table.id.equals(id))).go();
   }
 
   Stream<List<TodoItem>> watchTodoItems() {
@@ -379,6 +451,26 @@ class RoomkeeperRepository {
             updatedAt: now,
           ),
         );
+  }
+
+  Future<void> updateTodoItem({
+    required int id,
+    required String title,
+    String? notes,
+    DateTime? dueAt,
+    DateTime? reminderAt,
+  }) {
+    return (db.update(
+      db.todoItems,
+    )..where((table) => table.id.equals(id))).write(
+      TodoItemsCompanion(
+        title: Value(title.trim()),
+        notes: Value<String?>(notes?.trim().isEmpty ?? true ? null : notes),
+        dueAt: Value<DateTime?>(dueAt),
+        reminderAt: Value<DateTime?>(reminderAt),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> toggleTodoItem(TodoItem item) {

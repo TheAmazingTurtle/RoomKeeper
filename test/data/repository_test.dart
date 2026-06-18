@@ -130,6 +130,74 @@ void main() {
     },
   );
 
+  test('repository updates and deletes task and log records', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+
+    final todoId = await repository.addTodoItem(
+      title: 'Clean sink',
+      notes: 'Old',
+      dueAt: DateTime(2026, 6, 18),
+      reminderAt: DateTime(2026, 6, 19),
+    );
+    await repository.updateTodoItem(
+      id: todoId,
+      title: 'Clean shelf',
+      notes: 'Updated',
+      dueAt: DateTime(2026, 6, 20),
+    );
+
+    final todo = (await repository.getTodoItems()).single;
+    expect(todo.title, 'Clean shelf');
+    expect(todo.notes, 'Updated');
+    expect(todo.dueAt, DateTime(2026, 6, 20));
+    expect(todo.reminderAt, isNull);
+
+    final laundryId = await repository.addLaundryLog(
+      completedAt: DateTime(2026, 6, 1),
+      nextReminderAt: DateTime(2026, 6, 8),
+      notes: 'Sheets',
+    );
+    await repository.updateLaundryLog(
+      id: laundryId,
+      completedAt: DateTime(2026, 6, 2),
+      notes: 'Towels',
+    );
+    var laundry = await repository.getLaundryLogs();
+    expect(laundry.single.completedAt, DateTime(2026, 6, 2));
+    expect(laundry.single.notes, 'Towels');
+    expect(laundry.single.nextReminderAt, isNull);
+    await repository.deleteLaundryLog(laundryId);
+    laundry = await repository.getLaundryLogs();
+    expect(laundry, isEmpty);
+
+    final paymentId = await repository.addPaymentLog(
+      billType: 'rent',
+      billingMonth: '2026-06',
+      paidAt: DateTime(2026, 6, 3),
+      amountCents: 120000,
+      nextReminderAt: DateTime(2026, 7, 1),
+      notes: 'June',
+    );
+    await repository.updatePaymentLog(
+      id: paymentId,
+      billType: 'water',
+      billingMonth: '2026-07',
+      paidAt: DateTime(2026, 7, 3),
+      amountCents: 50000,
+      notes: 'Updated',
+    );
+    var payments = await repository.getPaymentLogs();
+    expect(payments.single.billType, 'water');
+    expect(payments.single.billingMonth, '2026-07');
+    expect(payments.single.amountCents, 50000);
+    expect(payments.single.nextReminderAt, isNull);
+    await repository.deletePaymentLog(paymentId);
+    payments = await repository.getPaymentLogs();
+    expect(payments, isEmpty);
+  });
+
   test('deleting room item removes managed stored photo file', () async {
     final database = inMemoryDatabaseForTests();
     addTearDown(database.close);

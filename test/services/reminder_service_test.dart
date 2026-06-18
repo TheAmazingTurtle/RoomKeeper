@@ -38,6 +38,50 @@ void main() {
     expect(await repository.getActiveRemindersFor('todo', todoId), isEmpty);
   });
 
+  test('reminder service reschedules edited task and log reminders', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+    final notifications = FakeNotificationGateway();
+    final service = ReminderService(
+      repository: repository,
+      notifications: notifications,
+    );
+
+    await service.initialize();
+    final firstReminder = DateTime.now().add(const Duration(days: 1));
+    final editedReminder = DateTime.now().add(const Duration(days: 2));
+    final todoId = await repository.addTodoItem(
+      title: 'Clean sink',
+      reminderAt: firstReminder,
+    );
+    await service.rescheduleOwnerReminder(
+      ownerType: 'todo',
+      ownerId: todoId,
+      title: 'Task: Clean sink',
+      scheduledAt: firstReminder,
+    );
+    final firstNotificationId = notifications.scheduled.single.id;
+
+    await repository.updateTodoItem(
+      id: todoId,
+      title: 'Clean shelf',
+      reminderAt: editedReminder,
+    );
+    await service.rescheduleOwnerReminder(
+      ownerType: 'todo',
+      ownerId: todoId,
+      title: 'Task: Clean shelf',
+      scheduledAt: editedReminder,
+    );
+
+    expect(notifications.cancelled, [firstNotificationId]);
+    expect(notifications.scheduled, hasLength(2));
+    final active = await repository.getActiveRemindersFor('todo', todoId);
+    expect(active, hasLength(1));
+    expect(active.single.title, 'Task: Clean shelf');
+  });
+
   test('reminder service rejects past reminders before saving', () async {
     final database = inMemoryDatabaseForTests();
     addTearDown(database.close);

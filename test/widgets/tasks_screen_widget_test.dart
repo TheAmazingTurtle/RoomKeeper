@@ -143,4 +143,77 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('task and log rows expose edit and delete actions', (
+    tester,
+  ) async {
+    await initializeDateFormatting('en_PH');
+    await tester.binding.setSurfaceSize(const Size(900, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    final todo = TodoItem(
+      id: 1,
+      title: 'Clean sink',
+      notes: 'Use vinegar',
+      isDone: false,
+      dueAt: now,
+      reminderAt: now.add(const Duration(days: 1)),
+      createdAt: now,
+      updatedAt: now,
+    );
+    final laundry = LaundryLog(
+      id: 2,
+      completedAt: now,
+      notes: 'Sheets',
+      nextReminderAt: now.add(const Duration(days: 7)),
+    );
+    final payment = PaymentLog(
+      id: 3,
+      billType: 'rent',
+      billingMonth: '2026-06',
+      paidAt: now,
+      amountCents: 120000,
+      notes: 'June',
+      nextReminderAt: now.add(const Duration(days: 30)),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          todosProvider.overrideWithValue(AsyncValue.data([todo])),
+          laundryProvider.overrideWithValue(AsyncValue.data([laundry])),
+          paymentsProvider.overrideWithValue(AsyncValue.data([payment])),
+        ],
+        child: const MaterialApp(home: TasksScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Edit task'), findsOneWidget);
+    expect(find.byTooltip('Delete task'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Edit task'));
+    await tester.pump();
+    expect(find.text('Edit to-do'), findsOneWidget);
+    expect(find.text('Clean sink'), findsAtLeastNWidgets(1));
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Laundry'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Edit laundry log'), findsOneWidget);
+    expect(find.byTooltip('Delete laundry log'), findsOneWidget);
+
+    await tester.tap(find.text('Bills'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Edit payment log'), findsOneWidget);
+    expect(find.byTooltip('Delete payment log'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Edit payment log'));
+    await tester.pump();
+    expect(find.text('Edit payment log'), findsOneWidget);
+    expect(find.text('1200.00'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
