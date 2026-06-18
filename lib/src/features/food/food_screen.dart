@@ -82,6 +82,7 @@ class _FoodTile extends ConsumerWidget {
           child: Icon(expired ? Icons.warning_amber_rounded : Icons.kitchen),
         ),
         title: Text(food.name),
+        onTap: () => _showFoodDetails(context, food, area),
         subtitle: Text(
           [
             '${compactQuantity(food.quantity)} ${food.unit}',
@@ -107,6 +108,11 @@ class _FoodTile extends ConsumerWidget {
                 visualDensity: VisualDensity.compact,
               ),
             IconButton(
+              tooltip: 'View food details',
+              icon: const Icon(Icons.info_outline),
+              onPressed: () => _showFoodDetails(context, food, area),
+            ),
+            IconButton(
               tooltip: 'Edit food',
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
@@ -129,6 +135,74 @@ class _FoodTile extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showFoodDetails(BuildContext context, FoodStock food, Area? area) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(food.name),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _DetailRow(
+                  label: 'Quantity',
+                  value: compactQuantity(food.quantity),
+                ),
+                _DetailRow(label: 'Unit', value: food.unit),
+                _DetailRow(label: 'Category', value: food.category),
+                _DetailRow(
+                  label: 'Storage area',
+                  value: area?.name ?? 'Unassigned',
+                ),
+                _DetailRow(
+                  label: 'Expiry date',
+                  value: formatDate(food.expiryDate),
+                ),
+                _DetailRow(
+                  label: 'Low-stock threshold',
+                  value: food.lowStockThreshold == null
+                      ? 'None'
+                      : compactQuantity(food.lowStockThreshold!),
+                ),
+                _DetailRow(label: 'Notes', value: food.notes ?? 'None'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 2),
+          SelectableText(value),
+        ],
       ),
     );
   }
