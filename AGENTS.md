@@ -152,7 +152,10 @@ flutter test -r expanded --concurrency=1
 7. Link the PR to the issue in the PR description with `Closes #123`,
    `Fixes #123`, or `Resolves #123`.
 8. Wait for checks and review, address feedback, then merge the PR into `main`.
-9. After merge, update local `main` and delete the completed feature branch.
+9. After Codex merges a branch, update `README.md` documentation for the merged
+   change, commit that documentation update, and push it to `origin`.
+10. After merge and documentation push, update local `main` and delete the
+   completed feature branch.
 
 Prefer linking the issue to the pull request, because GitHub will close the
 issue automatically when the PR merges.
