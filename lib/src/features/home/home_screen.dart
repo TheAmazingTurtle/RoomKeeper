@@ -233,6 +233,9 @@ class HomeScreen extends ConsumerWidget {
   Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
     try {
       final imported = await ref.read(backupServiceProvider).importFromPicker();
+      if (imported) {
+        await ref.read(reminderServiceProvider).rescheduleActiveReminders();
+      }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

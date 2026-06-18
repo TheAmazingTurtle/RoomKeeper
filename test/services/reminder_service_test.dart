@@ -37,4 +37,124 @@ void main() {
     expect(notifications.cancelled, [active.single.notificationId]);
     expect(await repository.getActiveRemindersFor('todo', todoId), isEmpty);
   });
+
+  test('reminder service rejects past reminders before saving', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+    final notifications = FakeNotificationGateway();
+    final service = ReminderService(
+      repository: repository,
+      notifications: notifications,
+    );
+
+    await service.initialize();
+    await repository.ensureDefaults();
+    final todoId = await repository.addTodoItem(title: 'Take trash out');
+
+    await expectLater(
+      service.rescheduleOwnerReminder(
+        ownerType: 'todo',
+        ownerId: todoId,
+        title: 'Task: Take trash out',
+        scheduledAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      ),
+      throwsArgumentError,
+    );
+    expect(await repository.getActiveRemindersFor('todo', todoId), isEmpty);
+    expect(notifications.scheduled, isEmpty);
+  });
+
+  test(
+    'reminder service does not save active reminder when scheduling fails',
+    () async {
+      final database = inMemoryDatabaseForTests();
+      addTearDown(database.close);
+      final repository = RoomkeeperRepository(database);
+      final notifications = FakeNotificationGateway()..failSchedule = true;
+      final service = ReminderService(
+        repository: repository,
+        notifications: notifications,
+      );
+
+      await service.initialize();
+      await repository.ensureDefaults();
+      final todoId = await repository.addTodoItem(title: 'Take trash out');
+
+      await expectLater(
+        service.rescheduleOwnerReminder(
+          ownerType: 'todo',
+          ownerId: todoId,
+          title: 'Task: Take trash out',
+          scheduledAt: DateTime.now().add(const Duration(days: 1)),
+        ),
+        throwsStateError,
+      );
+      expect(await repository.getActiveRemindersFor('todo', todoId), isEmpty);
+    },
+  );
+
+  test('reminder service surfaces notification permission denial', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+    final notifications = FakeNotificationGateway()..permissionGranted = false;
+    final service = ReminderService(
+      repository: repository,
+      notifications: notifications,
+    );
+
+    await service.initialize();
+    await repository.ensureDefaults();
+    final todoId = await repository.addTodoItem(title: 'Take trash out');
+
+    await expectLater(
+      service.rescheduleOwnerReminder(
+        ownerType: 'todo',
+        ownerId: todoId,
+        title: 'Task: Take trash out',
+        scheduledAt: DateTime.now().add(const Duration(days: 1)),
+      ),
+      throwsStateError,
+    );
+    expect(await repository.getActiveRemindersFor('todo', todoId), isEmpty);
+  });
+
+  test(
+    'reminder service reschedules future imported active reminders',
+    () async {
+      final database = inMemoryDatabaseForTests();
+      addTearDown(database.close);
+      final repository = RoomkeeperRepository(database);
+      final notifications = FakeNotificationGateway();
+      final service = ReminderService(
+        repository: repository,
+        notifications: notifications,
+      );
+
+      await service.initialize();
+      final future = DateTime.now().add(const Duration(days: 2));
+      final past = DateTime.now().subtract(const Duration(days: 1));
+      await repository.addReminder(
+        ownerType: 'todo',
+        ownerId: 1,
+        title: 'Future task',
+        scheduledAt: future,
+        notificationId: 10,
+      );
+      await repository.addReminder(
+        ownerType: 'todo',
+        ownerId: 2,
+        title: 'Past task',
+        scheduledAt: past,
+        notificationId: 11,
+      );
+
+      await service.rescheduleActiveReminders();
+
+      expect(notifications.scheduled.map((item) => item.id), [10]);
+      expect(await repository.getActiveRemindersFor('todo', 1), hasLength(1));
+      expect(await repository.getActiveRemindersFor('todo', 2), isEmpty);
+    },
+  );
 }
