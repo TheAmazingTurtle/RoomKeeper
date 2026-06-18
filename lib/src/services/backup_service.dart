@@ -61,8 +61,23 @@ class BackupService {
   }
 
   Future<File> writeBackupFile() async {
-    final json = await exportJson();
     final directory = await _temporaryDirectory();
+    return _writeBackupFile(directory);
+  }
+
+  Future<File> saveBackupFile() async {
+    final documents = await _documentsDirectory();
+    final directory = Directory(
+      p.join(documents.path, 'RoomKeeper', 'backups'),
+    );
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+    return _writeBackupFile(directory);
+  }
+
+  Future<File> _writeBackupFile(Directory directory) async {
+    final json = await exportJson();
     final stamp = DateTime.now()
         .toIso8601String()
         .replaceAll(':', '-')
