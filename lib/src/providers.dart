@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/database.dart';
 import 'data/roomkeeper_repository.dart';
-import 'services/backup_service.dart';
 import 'services/image_storage_service.dart';
 import 'services/notification_gateway.dart';
 import 'services/reminder_service.dart';
@@ -27,10 +26,6 @@ final reminderServiceProvider = Provider<ReminderService>((ref) {
     repository: ref.watch(repositoryProvider),
     notifications: ref.watch(notificationGatewayProvider),
   );
-});
-
-final backupServiceProvider = Provider<BackupService>((ref) {
-  return BackupService(ref.watch(databaseProvider));
 });
 
 final imageStorageServiceProvider = Provider<ImageStorageService>((ref) {
@@ -72,24 +67,6 @@ final todosProvider = StreamProvider<List<TodoItem>>((ref) {
 
 final activeRemindersProvider = StreamProvider<List<Reminder>>((ref) {
   return ref.watch(repositoryProvider).watchActiveReminders();
-});
-
-final primaryLayoutProvider = StreamProvider<RoomLayout?>((ref) {
-  return ref.watch(repositoryProvider).watchPrimaryLayout();
-});
-
-final layoutObjectsProvider = StreamProvider.family<List<LayoutObject>, int>((
-  ref,
-  layoutId,
-) {
-  return ref.watch(repositoryProvider).watchLayoutObjects(layoutId);
-});
-
-final layoutCellsProvider = StreamProvider.family<List<LayoutCell>, int>((
-  ref,
-  layoutId,
-) {
-  return ref.watch(repositoryProvider).watchLayoutCells(layoutId);
 });
 
 AppDatabase inMemoryDatabaseForTests() {

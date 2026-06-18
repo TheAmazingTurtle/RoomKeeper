@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'features/food/food_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/inventory/inventory_screen.dart';
-import 'features/room/room_screen.dart';
-import 'features/tasks/tasks_screen.dart';
+import 'features/laundry_bills/laundry_bills_screens.dart';
 import 'providers.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -28,12 +27,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const FoodScreen(),
           ),
           GoRoute(
-            path: '/tasks',
-            builder: (context, state) => const TasksScreen(),
+            path: '/laundry',
+            builder: (context, state) => const LaundryScreen(),
           ),
           GoRoute(
-            path: '/room',
-            builder: (context, state) => const RoomScreen(),
+            path: '/bills',
+            builder: (context, state) => const BillsScreen(),
           ),
         ],
       ),
@@ -168,14 +167,14 @@ class RoomKeeperShell extends StatelessWidget {
             label: 'Food',
           ),
           NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
-            label: 'Tasks',
+            icon: Icon(Icons.local_laundry_service_outlined),
+            selectedIcon: Icon(Icons.local_laundry_service),
+            label: 'Laundry',
           ),
           NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined),
-            selectedIcon: Icon(Icons.grid_view),
-            label: 'Layout',
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Bills',
           ),
         ],
       ),
@@ -185,8 +184,8 @@ class RoomKeeperShell extends StatelessWidget {
   int _selectedIndex(String location) {
     if (location.startsWith('/inventory')) return 1;
     if (location.startsWith('/food')) return 2;
-    if (location.startsWith('/tasks')) return 3;
-    if (location.startsWith('/room')) return 4;
+    if (location.startsWith('/laundry')) return 3;
+    if (location.startsWith('/bills')) return 4;
     return 0;
   }
 
@@ -194,8 +193,8 @@ class RoomKeeperShell extends StatelessWidget {
     return switch (index) {
       1 => '/inventory',
       2 => '/food',
-      3 => '/tasks',
-      4 => '/room',
+      3 => '/laundry',
+      4 => '/bills',
       _ => '/',
     };
   }
