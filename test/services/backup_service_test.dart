@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter_test/flutter_test.dart';
@@ -88,4 +89,77 @@ void main() {
     expect(await file.exists(), isTrue);
     expect(await existingFolder.exists(), isTrue);
   });
+
+  test(
+    'invalid backup JSON is rejected without changing existing data',
+    () async {
+      final database = inMemoryDatabaseForTests();
+      addTearDown(database.close);
+      final repository = RoomkeeperRepository(database);
+      await repository.ensureDefaults();
+      await repository.addTodoItem(title: 'Keep me');
+
+      final backup = BackupService(database);
+
+      await expectLater(
+        backup.importJson('not json'),
+        throwsA(isA<FormatException>()),
+      );
+
+      expect((await repository.getTodoItems()).single.title, 'Keep me');
+    },
+  );
+
+  test(
+    'invalid imported photo payload does not replace existing data',
+    () async {
+      final sourceDb = inMemoryDatabaseForTests();
+      final targetDb = inMemoryDatabaseForTests();
+      addTearDown(sourceDb.close);
+      addTearDown(targetDb.close);
+
+      final temp = await Directory.systemTemp.createTemp(
+        'roomkeeper_invalid_photo_backup_test',
+      );
+      addTearDown(() => temp.delete(recursive: true));
+      final sourcePhoto = File('${temp.path}/photo.jpg');
+      await sourcePhoto.writeAsBytes([1, 2, 3]);
+
+      final sourceRepo = RoomkeeperRepository(sourceDb);
+      await sourceRepo.ensureDefaults();
+      await sourceRepo.addInventoryItem(
+        name: 'Imported item',
+        photoPath: sourcePhoto.path,
+      );
+      final sourceBackup = BackupService(
+        sourceDb,
+        documentsDirectory: () async => Directory('${temp.path}/source_docs'),
+        temporaryDirectory: () async => temp,
+      );
+      final decoded = Map<String, Object?>.from(
+        jsonDecode(await sourceBackup.exportJson()) as Map,
+      );
+      final photos = Map<String, Object?>.from(decoded['photos'] as Map);
+      final firstPhoto = Map<String, Object?>.from(photos.values.first as Map);
+      firstPhoto['base64'] = 123;
+      photos[photos.keys.first] = firstPhoto;
+      decoded['photos'] = photos;
+
+      final targetRepo = RoomkeeperRepository(targetDb);
+      await targetRepo.ensureDefaults();
+      await targetRepo.addInventoryItem(name: 'Keep me');
+      final targetBackup = BackupService(
+        targetDb,
+        documentsDirectory: () async => Directory('${temp.path}/target_docs'),
+        temporaryDirectory: () async => temp,
+      );
+
+      await expectLater(
+        targetBackup.importJson(jsonEncode(decoded)),
+        throwsA(isA<FormatException>()),
+      );
+
+      expect((await targetRepo.getInventoryItems()).single.name, 'Keep me');
+    },
+  );
 }

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -124,80 +123,60 @@ class BackupService {
     final photos = decoded['photos'] is Map
         ? Map<String, Object?>.from(decoded['photos'] as Map)
         : <String, Object?>{};
+    final areas = _rows(
+      tables,
+      'areas',
+    ).map((json) => Area.fromJson(json).toCompanion(true)).toList();
+    final inventoryRows = _rows(tables, 'inventoryItems');
+    final restoredPhotoPaths = await _prepareInventoryPhotos(photos);
+    final inventoryItems = inventoryRows.map((json) {
+      final row = Map<String, Object?>.from(json);
+      row['photoPath'] = restoredPhotoPaths['${row['id']}'];
+      return InventoryItem.fromJson(row).toCompanion(true);
+    }).toList();
+    final foodStocks = _rows(
+      tables,
+      'foodStocks',
+    ).map((json) => FoodStock.fromJson(json).toCompanion(true)).toList();
+    final laundryLogs = _rows(
+      tables,
+      'laundryLogs',
+    ).map((json) => LaundryLog.fromJson(json).toCompanion(true)).toList();
+    final paymentLogs = _rows(
+      tables,
+      'paymentLogs',
+    ).map((json) => PaymentLog.fromJson(json).toCompanion(true)).toList();
+    final todoItems = _rows(
+      tables,
+      'todoItems',
+    ).map((json) => TodoItem.fromJson(json).toCompanion(true)).toList();
+    final roomLayouts = _rows(
+      tables,
+      'roomLayouts',
+    ).map((json) => RoomLayout.fromJson(json).toCompanion(true)).toList();
+    final layoutObjects = _rows(
+      tables,
+      'layoutObjects',
+    ).map((json) => LayoutObject.fromJson(json).toCompanion(true)).toList();
+    final reminders = _rows(
+      tables,
+      'reminders',
+    ).map((json) => Reminder.fromJson(json).toCompanion(true)).toList();
 
     await _db.transaction(() async {
       await _deleteAll();
       await _db.batch((batch) {
-        batch.insertAll(
-          _db.areas,
-          _rows(
-            tables,
-            'areas',
-          ).map((json) => Area.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.inventoryItems,
-          _rows(tables, 'inventoryItems').map((json) {
-            final row = Map<String, Object?>.from(json);
-            if (!photos.containsKey('${row['id']}')) {
-              row['photoPath'] = null;
-            }
-            return InventoryItem.fromJson(row).toCompanion(true);
-          }),
-        );
-        batch.insertAll(
-          _db.foodStocks,
-          _rows(
-            tables,
-            'foodStocks',
-          ).map((json) => FoodStock.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.laundryLogs,
-          _rows(
-            tables,
-            'laundryLogs',
-          ).map((json) => LaundryLog.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.paymentLogs,
-          _rows(
-            tables,
-            'paymentLogs',
-          ).map((json) => PaymentLog.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.todoItems,
-          _rows(
-            tables,
-            'todoItems',
-          ).map((json) => TodoItem.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.roomLayouts,
-          _rows(
-            tables,
-            'roomLayouts',
-          ).map((json) => RoomLayout.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.layoutObjects,
-          _rows(
-            tables,
-            'layoutObjects',
-          ).map((json) => LayoutObject.fromJson(json).toCompanion(true)),
-        );
-        batch.insertAll(
-          _db.reminders,
-          _rows(
-            tables,
-            'reminders',
-          ).map((json) => Reminder.fromJson(json).toCompanion(true)),
-        );
+        batch.insertAll(_db.areas, areas);
+        batch.insertAll(_db.inventoryItems, inventoryItems);
+        batch.insertAll(_db.foodStocks, foodStocks);
+        batch.insertAll(_db.laundryLogs, laundryLogs);
+        batch.insertAll(_db.paymentLogs, paymentLogs);
+        batch.insertAll(_db.todoItems, todoItems);
+        batch.insertAll(_db.roomLayouts, roomLayouts);
+        batch.insertAll(_db.layoutObjects, layoutObjects);
+        batch.insertAll(_db.reminders, reminders);
       });
     });
-
-    await _restoreInventoryPhotos(photos);
   }
 
   Future<Map<String, Object?>> _encodedInventoryPhotos(
@@ -221,10 +200,11 @@ class BackupService {
     return result;
   }
 
-  Future<void> _restoreInventoryPhotos(Map<String, Object?> photos) async {
-    if (photos.isEmpty) {
-      return;
-    }
+  Future<Map<String, String>> _prepareInventoryPhotos(
+    Map<String, Object?> photos,
+  ) async {
+    final restoredPaths = <String, String>{};
+    if (photos.isEmpty) return restoredPaths;
 
     final docs = await _documentsDirectory();
     final photoDirectory = Directory(p.join(docs.path, 'inventory_photos'));
@@ -242,7 +222,7 @@ class BackupService {
       final photoJson = Map<String, Object?>.from(payload);
       final encoded = photoJson['base64'];
       if (encoded is! String) {
-        continue;
+        throw const FormatException('Inventory photo payload is invalid.');
       }
 
       final fileName = photoJson['fileName'] is String
@@ -256,10 +236,9 @@ class BackupService {
         ),
       );
       await file.writeAsBytes(base64Decode(encoded));
-      await (_db.update(_db.inventoryItems)
-            ..where((table) => table.id.equals(itemId)))
-          .write(InventoryItemsCompanion(photoPath: Value(file.path)));
+      restoredPaths['$itemId'] = file.path;
     }
+    return restoredPaths;
   }
 
   List<Map<String, Object?>> _rows(Map<String, Object?> tables, String name) {
