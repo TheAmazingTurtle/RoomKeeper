@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,10 +18,17 @@ class FoodScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Food stock')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showDialog<void>(
-          context: context,
-          builder: (_) => _FoodDialog(areas: areas),
-        ),
+        onPressed: () async {
+          final saved = await showDialog<bool>(
+            context: context,
+            builder: (_) => _FoodDialog(areas: areas),
+          );
+          if (saved == true && context.mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Food item added.')));
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text('Food'),
       ),
@@ -30,7 +38,11 @@ class FoodScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               itemBuilder: (context, index) {
                 final food = foods[index];
-                return _FoodTile(food: food, area: areasById[food.areaId]);
+                return _FoodTile(
+                  food: food,
+                  area: areasById[food.areaId],
+                  areas: areas,
+                );
               },
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemCount: foods.length,
@@ -40,10 +52,15 @@ class FoodScreen extends ConsumerWidget {
 }
 
 class _FoodTile extends ConsumerWidget {
-  const _FoodTile({required this.food, required this.area});
+  const _FoodTile({
+    required this.food,
+    required this.area,
+    required this.areas,
+  });
 
   final FoodStock food;
   final Area? area;
+  final List<Area> areas;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -90,6 +107,21 @@ class _FoodTile extends ConsumerWidget {
                 visualDensity: VisualDensity.compact,
               ),
             IconButton(
+              tooltip: 'Edit food',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () async {
+                final saved = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => _FoodDialog(areas: areas, food: food),
+                );
+                if (saved == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Food item updated.')),
+                  );
+                }
+              },
+            ),
+            IconButton(
               tooltip: 'Delete food',
               icon: const Icon(Icons.delete_outline),
               onPressed: () =>
@@ -103,9 +135,10 @@ class _FoodTile extends ConsumerWidget {
 }
 
 class _FoodDialog extends ConsumerStatefulWidget {
-  const _FoodDialog({required this.areas});
+  const _FoodDialog({required this.areas, this.food});
 
   final List<Area> areas;
+  final FoodStock? food;
 
   @override
   ConsumerState<_FoodDialog> createState() => _FoodDialogState();
@@ -121,6 +154,23 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
   final _notesController = TextEditingController();
   int? _areaId;
   DateTime? _expiryDate;
+  bool get _isEditing => widget.food != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final food = widget.food;
+    if (food != null) {
+      _nameController.text = food.name;
+      _categoryController.text = food.category;
+      _quantityController.text = food.quantity.toString();
+      _unitController.text = food.unit;
+      _lowStockController.text = food.lowStockThreshold?.toString() ?? '';
+      _notesController.text = food.notes ?? '';
+      _areaId = food.areaId;
+      _expiryDate = food.expiryDate;
+    }
+  }
 
   @override
   void dispose() {
@@ -136,7 +186,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add food'),
+      title: Text(_isEditing ? 'Edit food' : 'Add food'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -229,7 +279,10 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(_isEditing ? 'Update' : 'Save'),
+        ),
       ],
     );
   }
@@ -259,20 +312,47 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
     final lowStock = _lowStockController.text.trim().isEmpty
         ? null
         : double.tryParse(_lowStockController.text);
-    await ref
-        .read(repositoryProvider)
-        .addFoodStock(
-          name: _nameController.text,
-          areaId: _areaId,
-          category: _categoryController.text,
-          quantity: double.parse(_quantityController.text),
-          unit: _unitController.text,
-          expiryDate: _expiryDate,
-          lowStockThreshold: lowStock,
-          notes: _notesController.text,
-        );
+    final food = widget.food;
+    if (food == null) {
+      await ref
+          .read(repositoryProvider)
+          .addFoodStock(
+            name: _nameController.text,
+            areaId: _areaId,
+            category: _categoryController.text,
+            quantity: double.parse(_quantityController.text),
+            unit: _unitController.text,
+            expiryDate: _expiryDate,
+            lowStockThreshold: lowStock,
+            notes: _notesController.text,
+          );
+    } else {
+      await ref
+          .read(repositoryProvider)
+          .updateFoodStock(
+            food.copyWith(
+              name: _nameController.text.trim(),
+              areaId: Value<int?>(_areaId),
+              category: _categoryController.text.trim().isEmpty
+                  ? 'Pantry'
+                  : _categoryController.text.trim(),
+              quantity: double.parse(_quantityController.text),
+              unit: _unitController.text.trim().isEmpty
+                  ? 'pcs'
+                  : _unitController.text.trim(),
+              expiryDate: Value<DateTime?>(_expiryDate),
+              lowStockThreshold: Value<double?>(lowStock),
+              notes: Value<String?>(
+                _notesController.text.trim().isEmpty
+                    ? null
+                    : _notesController.text.trim(),
+              ),
+              updatedAt: DateTime.now(),
+            ),
+          );
+    }
     if (mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     }
   }
 }
