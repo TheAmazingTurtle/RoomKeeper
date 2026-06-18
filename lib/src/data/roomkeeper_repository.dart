@@ -451,6 +451,13 @@ class RoomkeeperRepository {
         .get();
   }
 
+  Future<List<Reminder>> getActiveReminders() {
+    return (db.select(db.reminders)
+          ..where((table) => table.status.equals('active'))
+          ..orderBy([(table) => OrderingTerm(expression: table.scheduledAt)]))
+        .get();
+  }
+
   Future<int> addReminder({
     required String ownerType,
     required int ownerId,

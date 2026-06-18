@@ -17,6 +17,8 @@ class ScheduledNotification {
 class FakeNotificationGateway implements LocalNotificationGateway {
   bool initialized = false;
   bool permissionRequested = false;
+  bool permissionGranted = true;
+  bool failSchedule = false;
   final scheduled = <ScheduledNotification>[];
   final cancelled = <int>[];
 
@@ -28,7 +30,7 @@ class FakeNotificationGateway implements LocalNotificationGateway {
   @override
   Future<bool> requestPermission() async {
     permissionRequested = true;
-    return true;
+    return permissionGranted;
   }
 
   @override
@@ -38,6 +40,9 @@ class FakeNotificationGateway implements LocalNotificationGateway {
     required DateTime scheduledAt,
     String? body,
   }) async {
+    if (failSchedule) {
+      throw StateError('Scheduling failed.');
+    }
     scheduled.add(
       ScheduledNotification(
         id: id,

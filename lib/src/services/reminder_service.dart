@@ -10,10 +10,11 @@ class ReminderService {
 
   final RoomkeeperRepository _repository;
   final LocalNotificationGateway _notifications;
+  bool _permissionGranted = true;
 
   Future<void> initialize() async {
     await _notifications.initialize();
-    await _notifications.requestPermission();
+    _permissionGranted = await _notifications.requestPermission();
   }
 
   Future<int?> rescheduleOwnerReminder({
@@ -27,8 +28,15 @@ class ReminderService {
     if (scheduledAt == null) {
       return null;
     }
+    _validateSchedulable(scheduledAt);
 
     final notificationId = _nextNotificationId(ownerType, ownerId, scheduledAt);
+    await _scheduleNotification(
+      id: notificationId,
+      title: title,
+      body: body,
+      scheduledAt: scheduledAt,
+    );
     final reminderId = await _repository.addReminder(
       ownerType: ownerType,
       ownerId: ownerId,
@@ -37,13 +45,27 @@ class ReminderService {
       scheduledAt: scheduledAt,
       notificationId: notificationId,
     );
-    await _notifications.schedule(
-      id: notificationId,
-      title: title,
-      body: body,
-      scheduledAt: scheduledAt,
-    );
     return reminderId;
+  }
+
+  Future<void> rescheduleActiveReminders() async {
+    final active = await _repository.getActiveReminders();
+    for (final reminder in active) {
+      if (!reminder.scheduledAt.isAfter(DateTime.now())) {
+        await _repository.markReminderCancelled(reminder.id);
+        continue;
+      }
+      try {
+        await _scheduleNotification(
+          id: reminder.notificationId,
+          title: reminder.title,
+          body: reminder.body,
+          scheduledAt: reminder.scheduledAt,
+        );
+      } catch (_) {
+        await _repository.markReminderCancelled(reminder.id);
+      }
+    }
   }
 
   Future<void> cancelOwnerReminders({
@@ -65,5 +87,33 @@ class ReminderService {
       DateTime.now().microsecondsSinceEpoch,
     );
     return raw.abs() % 2147483647;
+  }
+
+  Future<void> _scheduleNotification({
+    required int id,
+    required String title,
+    required DateTime scheduledAt,
+    String? body,
+  }) async {
+    _validateSchedulable(scheduledAt);
+    if (!_permissionGranted) {
+      throw StateError('Notification permission was not granted.');
+    }
+    await _notifications.schedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledAt: scheduledAt,
+    );
+  }
+
+  void _validateSchedulable(DateTime scheduledAt) {
+    if (!scheduledAt.isAfter(DateTime.now())) {
+      throw ArgumentError.value(
+        scheduledAt,
+        'scheduledAt',
+        'Reminder time must be in the future.',
+      );
+    }
   }
 }
