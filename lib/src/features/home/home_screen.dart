@@ -43,14 +43,38 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('RoomKeeper'),
         actions: [
           IconButton(
-            tooltip: 'Import backup',
-            icon: const Icon(Icons.upload_file),
-            onPressed: () => _importBackup(context, ref),
+            tooltip: 'Save backup to file',
+            icon: const Icon(Icons.save_alt_outlined),
+            onPressed: () => _saveBackup(context, ref),
           ),
-          IconButton(
-            tooltip: 'Export backup',
-            icon: const Icon(Icons.ios_share),
-            onPressed: () => _exportBackup(context, ref),
+          PopupMenuButton<_BackupAction>(
+            tooltip: 'Backup options',
+            onSelected: (action) {
+              switch (action) {
+                case _BackupAction.share:
+                  _shareBackup(context, ref);
+                case _BackupAction.import:
+                  _importBackup(context, ref);
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _BackupAction.share,
+                child: ListTile(
+                  leading: Icon(Icons.ios_share),
+                  title: Text('Share backup'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: _BackupAction.import,
+                child: ListTile(
+                  leading: Icon(Icons.upload_file),
+                  title: Text('Import backup'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -172,7 +196,24 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
+  Future<void> _saveBackup(BuildContext context, WidgetRef ref) async {
+    try {
+      final file = await ref.read(backupServiceProvider).saveBackupFile();
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Backup saved to ${file.path}')));
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Backup save failed: $error')));
+      }
+    }
+  }
+
+  Future<void> _shareBackup(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(backupServiceProvider).shareBackupFile();
       if (context.mounted) {
@@ -208,6 +249,8 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 }
+
+enum _BackupAction { share, import }
 
 class _MetricCard extends StatelessWidget {
   const _MetricCard({

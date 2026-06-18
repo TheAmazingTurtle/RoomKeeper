@@ -60,4 +60,32 @@ void main() {
       expect(await File(items.single.photoPath!).exists(), isTrue);
     },
   );
+
+  test('save backup writes to a dedicated RoomKeeper backups folder', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+
+    final temp = await Directory.systemTemp.createTemp(
+      'roomkeeper_save_backup_test',
+    );
+    addTearDown(() => temp.delete(recursive: true));
+    final existingFolder = Directory('${temp.path}/RoomKeeper/backups');
+    await existingFolder.create(recursive: true);
+
+    final repository = RoomkeeperRepository(database);
+    await repository.ensureDefaults();
+
+    final backup = BackupService(
+      database,
+      documentsDirectory: () async => temp,
+      temporaryDirectory: () async => Directory('${temp.path}/tmp'),
+    );
+    final file = await backup.saveBackupFile();
+
+    expect(file.path, contains('RoomKeeper'));
+    expect(file.path, contains('backups'));
+    expect(file.path, endsWith('.json'));
+    expect(await file.exists(), isTrue);
+    expect(await existingFolder.exists(), isTrue);
+  });
 }
