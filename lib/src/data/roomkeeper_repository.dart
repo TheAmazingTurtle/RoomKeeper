@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
+import 'package:path/path.dart' as p;
 
 import 'database.dart';
 
@@ -191,10 +194,23 @@ class RoomkeeperRepository {
         .write(item.toCompanion(true));
   }
 
-  Future<void> deleteInventoryItem(int id) {
-    return (db.delete(
+  Future<void> deleteInventoryItem(int id) async {
+    final item = await (db.select(
+      db.inventoryItems,
+    )..where((table) => table.id.equals(id))).getSingleOrNull();
+    await (db.delete(
       db.inventoryItems,
     )..where((table) => table.id.equals(id))).go();
+    await _deleteManagedInventoryPhoto(item?.photoPath);
+  }
+
+  Future<void> _deleteManagedInventoryPhoto(String? photoPath) async {
+    if (photoPath == null) return;
+    if (!p.split(photoPath).contains('inventory_photos')) return;
+    final file = File(photoPath);
+    if (await file.exists()) {
+      await file.delete();
+    }
   }
 
   Stream<List<FoodStock>> watchFoodStocks() {
