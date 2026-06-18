@@ -58,6 +58,10 @@ final laundryProvider = StreamProvider<List<LaundryLog>>((ref) {
   return ref.watch(repositoryProvider).watchLaundryLogs();
 });
 
+final laundryBasketProvider = StreamProvider<List<LaundryBasketItem>>((ref) {
+  return ref.watch(repositoryProvider).watchLaundryBasketItems();
+});
+
 final paymentsProvider = StreamProvider<List<PaymentLog>>((ref) {
   return ref.watch(repositoryProvider).watchPaymentLogs();
 });
@@ -79,6 +83,13 @@ final layoutObjectsProvider = StreamProvider.family<List<LayoutObject>, int>((
   layoutId,
 ) {
   return ref.watch(repositoryProvider).watchLayoutObjects(layoutId);
+});
+
+final layoutCellsProvider = StreamProvider.family<List<LayoutCell>, int>((
+  ref,
+  layoutId,
+) {
+  return ref.watch(repositoryProvider).watchLayoutCells(layoutId);
 });
 
 AppDatabase inMemoryDatabaseForTests() {

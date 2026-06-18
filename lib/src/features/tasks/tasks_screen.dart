@@ -157,6 +157,169 @@ class _LaundryTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(laundryBasketProvider).value ?? const [];
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const _LaundryItemDialog(),
+                ),
+                icon: const Icon(Icons.add),
+                label: const Text('Add item'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              tooltip: 'Reset basket',
+              icon: const Icon(Icons.restart_alt),
+              onPressed: items.isEmpty
+                  ? null
+                  : () async {
+                      await ref
+                          .read(repositoryProvider)
+                          .resetLaundryBasketCounts();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Laundry basket reset.'),
+                          ),
+                        );
+                      }
+                    },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (items.isEmpty)
+          const _EmptyMessage(
+            icon: Icons.local_laundry_service_outlined,
+            title: 'No laundry counters yet',
+            body: 'Laundry basket counters will appear here after app startup.',
+          )
+        else
+          RoomKeeperCard(
+            child: Column(
+              children: items
+                  .map((item) => _LaundryBasketTile(item: item))
+                  .toList(),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _LaundryBasketTile extends ConsumerWidget {
+  const _LaundryBasketTile({required this.item});
+
+  final LaundryBasketItem item;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tile = ListTile(
+      leading: const Icon(Icons.local_laundry_service_outlined),
+      title: Text(item.name),
+      subtitle: item.isDefault ? const Text('Everyday clothes') : null,
+      trailing: QuantityStepper(
+        value: '${item.count}',
+        decrementTooltip: 'Remove one ${item.name}',
+        incrementTooltip: 'Add one ${item.name}',
+        canDecrement: item.count > 0,
+        onDecrement: () =>
+            ref.read(repositoryProvider).changeLaundryBasketCount(item, -1),
+        onIncrement: () =>
+            ref.read(repositoryProvider).changeLaundryBasketCount(item, 1),
+      ),
+    );
+    if (item.isDefault) return tile;
+    return Dismissible(
+      key: ValueKey('laundry-basket-${item.id}'),
+      direction: DismissDirection.endToStart,
+      background: const DeleteSwipeBackground(),
+      confirmDismiss: (_) => confirmDelete(
+        context: context,
+        title: 'Delete laundry item?',
+        itemName: item.name,
+      ),
+      onDismissed: (_) async {
+        await ref.read(repositoryProvider).deleteLaundryBasketItem(item.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('${item.name} deleted.')));
+        }
+      },
+      child: tile,
+    );
+  }
+}
+
+class _LaundryItemDialog extends ConsumerStatefulWidget {
+  const _LaundryItemDialog();
+
+  @override
+  ConsumerState<_LaundryItemDialog> createState() => _LaundryItemDialogState();
+}
+
+class _LaundryItemDialogState extends ConsumerState<_LaundryItemDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add laundry item'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Item type',
+            hintText: 'Hanky, pillow case, bed sheet',
+          ),
+          textCapitalization: TextCapitalization.words,
+          validator: (value) =>
+              value == null || value.trim().isEmpty ? 'Required' : null,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Add item')),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    await ref
+        .read(repositoryProvider)
+        .addLaundryBasketItem(_nameController.text);
+    if (mounted) Navigator.pop(context);
+  }
+}
+
+// ignore: unused_element
+class _LaundryLogTab extends ConsumerWidget {
+  const _LaundryLogTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final logs = ref.watch(laundryProvider).value ?? const [];
 
     return ListView(

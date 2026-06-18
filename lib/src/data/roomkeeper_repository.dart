@@ -5,6 +5,8 @@ import 'package:path/path.dart' as p;
 
 import 'database.dart';
 
+typedef LayoutCellPosition = ({int column, int row});
+
 const defaultAreaSpecs = [
   ('Kitchen', 'kitchen', '#F97316'),
   ('Restroom', 'restroom', '#06B6D4'),
@@ -13,6 +15,8 @@ const defaultAreaSpecs = [
   ('Hobby', 'hobby', '#EF4444'),
   ('Desk', 'desk', '#3B82F6'),
 ];
+
+const defaultLaundryBasketItems = ['Shirt', 'Underwear', 'Shorts', 'Pants'];
 
 class RoomkeeperRepository {
   RoomkeeperRepository(this.db);
@@ -67,6 +71,7 @@ class RoomkeeperRepository {
       db.roomLayouts,
     )..limit(1)).getSingleOrNull();
     if (hasLayout != null) {
+      await ensureLaundryBasketDefaults();
       return;
     }
 
@@ -130,6 +135,32 @@ class RoomkeeperRepository {
         ),
       ]);
     });
+    await ensureLaundryBasketDefaults();
+  }
+
+  Future<void> ensureLaundryBasketDefaults() async {
+    final existing = await db.select(db.laundryBasketItems).get();
+    final existingNames = {
+      for (final item in existing) item.name.trim().toLowerCase(),
+    };
+    final now = DateTime.now();
+    await db.batch((batch) {
+      for (var index = 0; index < defaultLaundryBasketItems.length; index++) {
+        final name = defaultLaundryBasketItems[index];
+        if (existingNames.contains(name.toLowerCase())) continue;
+        batch.insert(
+          db.laundryBasketItems,
+          LaundryBasketItemsCompanion.insert(
+            name: name,
+            isDefault: const Value(true),
+            sortOrder: Value(index),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+    });
   }
 
   Future<int> addArea({
@@ -192,6 +223,18 @@ class RoomkeeperRepository {
     return (db.update(db.inventoryItems)
           ..where((table) => table.id.equals(item.id)))
         .write(item.toCompanion(true));
+  }
+
+  Future<void> changeInventoryQuantity(InventoryItem item, int delta) {
+    final next = (item.quantity + delta).clamp(0, 999).toInt();
+    return (db.update(
+      db.inventoryItems,
+    )..where((table) => table.id.equals(item.id))).write(
+      InventoryItemsCompanion(
+        quantity: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> deleteInventoryItem(int id) async {
@@ -271,6 +314,18 @@ class RoomkeeperRepository {
         .write(food.toCompanion(true));
   }
 
+  Future<void> changeFoodQuantity(FoodStock food, double delta) {
+    final next = (food.quantity + delta).clamp(0, 999).toDouble();
+    return (db.update(
+      db.foodStocks,
+    )..where((table) => table.id.equals(food.id))).write(
+      FoodStocksCompanion(
+        quantity: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<void> deleteFoodStock(int id) {
     return (db.delete(
       db.foodStocks,
@@ -335,6 +390,71 @@ class RoomkeeperRepository {
   Future<void> deleteLaundryLog(int id) {
     return (db.delete(
       db.laundryLogs,
+    )..where((table) => table.id.equals(id))).go();
+  }
+
+  Stream<List<LaundryBasketItem>> watchLaundryBasketItems() {
+    final query = db.select(db.laundryBasketItems)
+      ..orderBy([
+        (table) => OrderingTerm(expression: table.sortOrder),
+        (table) => OrderingTerm(expression: table.name),
+      ]);
+    return query.watch();
+  }
+
+  Future<List<LaundryBasketItem>> getLaundryBasketItems() {
+    return (db.select(db.laundryBasketItems)..orderBy([
+          (table) => OrderingTerm(expression: table.sortOrder),
+          (table) => OrderingTerm(expression: table.name),
+        ]))
+        .get();
+  }
+
+  Future<int> addLaundryBasketItem(String name) async {
+    final count = await db
+        .select(db.laundryBasketItems)
+        .get()
+        .then((rows) => rows.length);
+    final now = DateTime.now();
+    return db
+        .into(db.laundryBasketItems)
+        .insert(
+          LaundryBasketItemsCompanion.insert(
+            name: name.trim(),
+            sortOrder: Value(count),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
+  Future<void> changeLaundryBasketCount(LaundryBasketItem item, int delta) {
+    final next = (item.count + delta).clamp(0, 999).toInt();
+    return (db.update(
+      db.laundryBasketItems,
+    )..where((table) => table.id.equals(item.id))).write(
+      LaundryBasketItemsCompanion(
+        count: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> resetLaundryBasketCounts() {
+    return db
+        .update(db.laundryBasketItems)
+        .write(
+          LaundryBasketItemsCompanion(
+            count: const Value(0),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
+  Future<void> deleteLaundryBasketItem(int id) {
+    return (db.delete(
+      db.laundryBasketItems,
     )..where((table) => table.id.equals(id))).go();
   }
 
@@ -549,8 +669,72 @@ class RoomkeeperRepository {
         .write(object.toCompanion(true));
   }
 
-  Future<void> deleteLayoutObject(int id) {
-    return (db.delete(
+  Stream<List<LayoutCell>> watchLayoutCells(int layoutId) {
+    final query = db.select(db.layoutCells)
+      ..where((table) => table.layoutId.equals(layoutId))
+      ..orderBy([
+        (table) => OrderingTerm(expression: table.row),
+        (table) => OrderingTerm(expression: table.column),
+      ]);
+    return query.watch();
+  }
+
+  Future<List<LayoutCell>> getLayoutCells(int layoutId) {
+    return (db.select(db.layoutCells)
+          ..where((table) => table.layoutId.equals(layoutId))
+          ..orderBy([
+            (table) => OrderingTerm(expression: table.row),
+            (table) => OrderingTerm(expression: table.column),
+          ]))
+        .get();
+  }
+
+  Future<void> replaceLayoutObjectCells({
+    required LayoutObject object,
+    required Set<LayoutCellPosition> cells,
+  }) async {
+    if (cells.isEmpty) {
+      throw ArgumentError.value(cells, 'cells', 'A room area needs cells.');
+    }
+    if (!_isContiguous(cells)) {
+      throw ArgumentError.value(
+        cells,
+        'cells',
+        'Room area cells must stay connected.',
+      );
+    }
+
+    await db.transaction(() async {
+      await (db.delete(
+        db.layoutCells,
+      )..where((table) => table.layoutObjectId.equals(object.id))).go();
+      for (final cell in cells) {
+        await (db.delete(db.layoutCells)..where(
+              (table) =>
+                  table.layoutId.equals(object.layoutId) &
+                  table.column.equals(cell.column) &
+                  table.row.equals(cell.row),
+            ))
+            .go();
+        await db
+            .into(db.layoutCells)
+            .insert(
+              LayoutCellsCompanion.insert(
+                layoutId: object.layoutId,
+                layoutObjectId: object.id,
+                column: cell.column,
+                row: cell.row,
+              ),
+            );
+      }
+    });
+  }
+
+  Future<void> deleteLayoutObject(int id) async {
+    await (db.delete(
+      db.layoutCells,
+    )..where((table) => table.layoutObjectId.equals(id))).go();
+    await (db.delete(
       db.layoutObjects,
     )..where((table) => table.id.equals(id))).go();
   }
@@ -625,4 +809,28 @@ class RoomkeeperRepository {
       ),
     );
   }
+}
+
+bool _isContiguous(Set<LayoutCellPosition> cells) {
+  if (cells.length <= 1) return true;
+  final remaining = cells.toSet();
+  final queue = <LayoutCellPosition>[remaining.first];
+  remaining.remove(queue.first);
+
+  while (queue.isNotEmpty) {
+    final current = queue.removeLast();
+    final neighbors = [
+      (column: current.column + 1, row: current.row),
+      (column: current.column - 1, row: current.row),
+      (column: current.column, row: current.row + 1),
+      (column: current.column, row: current.row - 1),
+    ];
+    for (final neighbor in neighbors) {
+      if (remaining.remove(neighbor)) {
+        queue.add(neighbor);
+      }
+    }
+  }
+
+  return remaining.isEmpty;
 }
