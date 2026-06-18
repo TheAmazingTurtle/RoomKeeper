@@ -3902,6 +3902,369 @@ class LayoutObjectsCompanion extends UpdateCompanion<LayoutObject> {
   }
 }
 
+class $LayoutCellsTable extends LayoutCells
+    with TableInfo<$LayoutCellsTable, LayoutCell> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LayoutCellsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _layoutIdMeta = const VerificationMeta(
+    'layoutId',
+  );
+  @override
+  late final GeneratedColumn<int> layoutId = GeneratedColumn<int>(
+    'layout_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES room_layouts (id)',
+    ),
+  );
+  static const VerificationMeta _layoutObjectIdMeta = const VerificationMeta(
+    'layoutObjectId',
+  );
+  @override
+  late final GeneratedColumn<int> layoutObjectId = GeneratedColumn<int>(
+    'layout_object_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES layout_objects (id)',
+    ),
+  );
+  static const VerificationMeta _columnMeta = const VerificationMeta('column');
+  @override
+  late final GeneratedColumn<int> column = GeneratedColumn<int>(
+    'column',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rowMeta = const VerificationMeta('row');
+  @override
+  late final GeneratedColumn<int> row = GeneratedColumn<int>(
+    'row',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    layoutId,
+    layoutObjectId,
+    column,
+    row,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'layout_cells';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LayoutCell> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('layout_id')) {
+      context.handle(
+        _layoutIdMeta,
+        layoutId.isAcceptableOrUnknown(data['layout_id']!, _layoutIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_layoutIdMeta);
+    }
+    if (data.containsKey('layout_object_id')) {
+      context.handle(
+        _layoutObjectIdMeta,
+        layoutObjectId.isAcceptableOrUnknown(
+          data['layout_object_id']!,
+          _layoutObjectIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_layoutObjectIdMeta);
+    }
+    if (data.containsKey('column')) {
+      context.handle(
+        _columnMeta,
+        column.isAcceptableOrUnknown(data['column']!, _columnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_columnMeta);
+    }
+    if (data.containsKey('row')) {
+      context.handle(
+        _rowMeta,
+        row.isAcceptableOrUnknown(data['row']!, _rowMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rowMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {layoutId, column, row},
+  ];
+  @override
+  LayoutCell map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LayoutCell(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      layoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}layout_id'],
+      )!,
+      layoutObjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}layout_object_id'],
+      )!,
+      column: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}column'],
+      )!,
+      row: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row'],
+      )!,
+    );
+  }
+
+  @override
+  $LayoutCellsTable createAlias(String alias) {
+    return $LayoutCellsTable(attachedDatabase, alias);
+  }
+}
+
+class LayoutCell extends DataClass implements Insertable<LayoutCell> {
+  final int id;
+  final int layoutId;
+  final int layoutObjectId;
+  final int column;
+  final int row;
+  const LayoutCell({
+    required this.id,
+    required this.layoutId,
+    required this.layoutObjectId,
+    required this.column,
+    required this.row,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['layout_id'] = Variable<int>(layoutId);
+    map['layout_object_id'] = Variable<int>(layoutObjectId);
+    map['column'] = Variable<int>(column);
+    map['row'] = Variable<int>(row);
+    return map;
+  }
+
+  LayoutCellsCompanion toCompanion(bool nullToAbsent) {
+    return LayoutCellsCompanion(
+      id: Value(id),
+      layoutId: Value(layoutId),
+      layoutObjectId: Value(layoutObjectId),
+      column: Value(column),
+      row: Value(row),
+    );
+  }
+
+  factory LayoutCell.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LayoutCell(
+      id: serializer.fromJson<int>(json['id']),
+      layoutId: serializer.fromJson<int>(json['layoutId']),
+      layoutObjectId: serializer.fromJson<int>(json['layoutObjectId']),
+      column: serializer.fromJson<int>(json['column']),
+      row: serializer.fromJson<int>(json['row']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'layoutId': serializer.toJson<int>(layoutId),
+      'layoutObjectId': serializer.toJson<int>(layoutObjectId),
+      'column': serializer.toJson<int>(column),
+      'row': serializer.toJson<int>(row),
+    };
+  }
+
+  LayoutCell copyWith({
+    int? id,
+    int? layoutId,
+    int? layoutObjectId,
+    int? column,
+    int? row,
+  }) => LayoutCell(
+    id: id ?? this.id,
+    layoutId: layoutId ?? this.layoutId,
+    layoutObjectId: layoutObjectId ?? this.layoutObjectId,
+    column: column ?? this.column,
+    row: row ?? this.row,
+  );
+  LayoutCell copyWithCompanion(LayoutCellsCompanion data) {
+    return LayoutCell(
+      id: data.id.present ? data.id.value : this.id,
+      layoutId: data.layoutId.present ? data.layoutId.value : this.layoutId,
+      layoutObjectId: data.layoutObjectId.present
+          ? data.layoutObjectId.value
+          : this.layoutObjectId,
+      column: data.column.present ? data.column.value : this.column,
+      row: data.row.present ? data.row.value : this.row,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LayoutCell(')
+          ..write('id: $id, ')
+          ..write('layoutId: $layoutId, ')
+          ..write('layoutObjectId: $layoutObjectId, ')
+          ..write('column: $column, ')
+          ..write('row: $row')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, layoutId, layoutObjectId, column, row);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LayoutCell &&
+          other.id == this.id &&
+          other.layoutId == this.layoutId &&
+          other.layoutObjectId == this.layoutObjectId &&
+          other.column == this.column &&
+          other.row == this.row);
+}
+
+class LayoutCellsCompanion extends UpdateCompanion<LayoutCell> {
+  final Value<int> id;
+  final Value<int> layoutId;
+  final Value<int> layoutObjectId;
+  final Value<int> column;
+  final Value<int> row;
+  const LayoutCellsCompanion({
+    this.id = const Value.absent(),
+    this.layoutId = const Value.absent(),
+    this.layoutObjectId = const Value.absent(),
+    this.column = const Value.absent(),
+    this.row = const Value.absent(),
+  });
+  LayoutCellsCompanion.insert({
+    this.id = const Value.absent(),
+    required int layoutId,
+    required int layoutObjectId,
+    required int column,
+    required int row,
+  }) : layoutId = Value(layoutId),
+       layoutObjectId = Value(layoutObjectId),
+       column = Value(column),
+       row = Value(row);
+  static Insertable<LayoutCell> custom({
+    Expression<int>? id,
+    Expression<int>? layoutId,
+    Expression<int>? layoutObjectId,
+    Expression<int>? column,
+    Expression<int>? row,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (layoutId != null) 'layout_id': layoutId,
+      if (layoutObjectId != null) 'layout_object_id': layoutObjectId,
+      if (column != null) 'column': column,
+      if (row != null) 'row': row,
+    });
+  }
+
+  LayoutCellsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? layoutId,
+    Value<int>? layoutObjectId,
+    Value<int>? column,
+    Value<int>? row,
+  }) {
+    return LayoutCellsCompanion(
+      id: id ?? this.id,
+      layoutId: layoutId ?? this.layoutId,
+      layoutObjectId: layoutObjectId ?? this.layoutObjectId,
+      column: column ?? this.column,
+      row: row ?? this.row,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (layoutId.present) {
+      map['layout_id'] = Variable<int>(layoutId.value);
+    }
+    if (layoutObjectId.present) {
+      map['layout_object_id'] = Variable<int>(layoutObjectId.value);
+    }
+    if (column.present) {
+      map['column'] = Variable<int>(column.value);
+    }
+    if (row.present) {
+      map['row'] = Variable<int>(row.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LayoutCellsCompanion(')
+          ..write('id: $id, ')
+          ..write('layoutId: $layoutId, ')
+          ..write('layoutObjectId: $layoutObjectId, ')
+          ..write('column: $column, ')
+          ..write('row: $row')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $RemindersTable extends Reminders
     with TableInfo<$RemindersTable, Reminder> {
   @override
@@ -4521,6 +4884,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TodoItemsTable todoItems = $TodoItemsTable(this);
   late final $RoomLayoutsTable roomLayouts = $RoomLayoutsTable(this);
   late final $LayoutObjectsTable layoutObjects = $LayoutObjectsTable(this);
+  late final $LayoutCellsTable layoutCells = $LayoutCellsTable(this);
   late final $RemindersTable reminders = $RemindersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -4535,6 +4899,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     todoItems,
     roomLayouts,
     layoutObjects,
+    layoutCells,
     reminders,
   ];
 }
@@ -6551,6 +6916,24 @@ final class $$RoomLayoutsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$LayoutCellsTable, List<LayoutCell>>
+  _layoutCellsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.layoutCells,
+    aliasName: 'room_layouts__id__layout_cells__layout_id',
+  );
+
+  $$LayoutCellsTableProcessedTableManager get layoutCellsRefs {
+    final manager = $$LayoutCellsTableTableManager(
+      $_db,
+      $_db.layoutCells,
+    ).filter((f) => f.layoutId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_layoutCellsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$RoomLayoutsTableFilterComposer
@@ -6608,6 +6991,31 @@ class $$RoomLayoutsTableFilterComposer
           }) => $$LayoutObjectsTableFilterComposer(
             $db: $db,
             $table: $db.layoutObjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> layoutCellsRefs(
+    Expression<bool> Function($$LayoutCellsTableFilterComposer f) f,
+  ) {
+    final $$LayoutCellsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.layoutCells,
+      getReferencedColumn: (t) => t.layoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutCellsTableFilterComposer(
+            $db: $db,
+            $table: $db.layoutCells,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6709,6 +7117,31 @@ class $$RoomLayoutsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> layoutCellsRefs<T extends Object>(
+    Expression<T> Function($$LayoutCellsTableAnnotationComposer a) f,
+  ) {
+    final $$LayoutCellsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.layoutCells,
+      getReferencedColumn: (t) => t.layoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutCellsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.layoutCells,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RoomLayoutsTableTableManager
@@ -6724,7 +7157,7 @@ class $$RoomLayoutsTableTableManager
           $$RoomLayoutsTableUpdateCompanionBuilder,
           (RoomLayout, $$RoomLayoutsTableReferences),
           RoomLayout,
-          PrefetchHooks Function({bool layoutObjectsRefs})
+          PrefetchHooks Function({bool layoutObjectsRefs, bool layoutCellsRefs})
         > {
   $$RoomLayoutsTableTableManager(_$AppDatabase db, $RoomLayoutsTable table)
     : super(
@@ -6777,38 +7210,63 @@ class $$RoomLayoutsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({layoutObjectsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (layoutObjectsRefs) db.layoutObjects,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (layoutObjectsRefs)
-                    await $_getPrefetchedData<
-                      RoomLayout,
-                      $RoomLayoutsTable,
-                      LayoutObject
-                    >(
-                      currentTable: table,
-                      referencedTable: $$RoomLayoutsTableReferences
-                          ._layoutObjectsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$RoomLayoutsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).layoutObjectsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.layoutId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({layoutObjectsRefs = false, layoutCellsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (layoutObjectsRefs) db.layoutObjects,
+                    if (layoutCellsRefs) db.layoutCells,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (layoutObjectsRefs)
+                        await $_getPrefetchedData<
+                          RoomLayout,
+                          $RoomLayoutsTable,
+                          LayoutObject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RoomLayoutsTableReferences
+                              ._layoutObjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RoomLayoutsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).layoutObjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.layoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (layoutCellsRefs)
+                        await $_getPrefetchedData<
+                          RoomLayout,
+                          $RoomLayoutsTable,
+                          LayoutCell
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RoomLayoutsTableReferences
+                              ._layoutCellsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RoomLayoutsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).layoutCellsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.layoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -6825,7 +7283,7 @@ typedef $$RoomLayoutsTableProcessedTableManager =
       $$RoomLayoutsTableUpdateCompanionBuilder,
       (RoomLayout, $$RoomLayoutsTableReferences),
       RoomLayout,
-      PrefetchHooks Function({bool layoutObjectsRefs})
+      PrefetchHooks Function({bool layoutObjectsRefs, bool layoutCellsRefs})
     >;
 typedef $$LayoutObjectsTableCreateCompanionBuilder =
     LayoutObjectsCompanion Function({
@@ -6897,6 +7355,24 @@ final class $$LayoutObjectsTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$LayoutCellsTable, List<LayoutCell>>
+  _layoutCellsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.layoutCells,
+    aliasName: 'layout_objects__id__layout_cells__layout_object_id',
+  );
+
+  $$LayoutCellsTableProcessedTableManager get layoutCellsRefs {
+    final manager = $$LayoutCellsTableTableManager(
+      $_db,
+      $_db.layoutCells,
+    ).filter((f) => f.layoutObjectId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_layoutCellsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -7004,6 +7480,31 @@ class $$LayoutObjectsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> layoutCellsRefs(
+    Expression<bool> Function($$LayoutCellsTableFilterComposer f) f,
+  ) {
+    final $$LayoutCellsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.layoutCells,
+      getReferencedColumn: (t) => t.layoutObjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutCellsTableFilterComposer(
+            $db: $db,
+            $table: $db.layoutCells,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -7197,6 +7698,31 @@ class $$LayoutObjectsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> layoutCellsRefs<T extends Object>(
+    Expression<T> Function($$LayoutCellsTableAnnotationComposer a) f,
+  ) {
+    final $$LayoutCellsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.layoutCells,
+      getReferencedColumn: (t) => t.layoutObjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutCellsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.layoutCells,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LayoutObjectsTableTableManager
@@ -7212,7 +7738,11 @@ class $$LayoutObjectsTableTableManager
           $$LayoutObjectsTableUpdateCompanionBuilder,
           (LayoutObject, $$LayoutObjectsTableReferences),
           LayoutObject,
-          PrefetchHooks Function({bool layoutId, bool linkedAreaId})
+          PrefetchHooks Function({
+            bool layoutId,
+            bool linkedAreaId,
+            bool layoutCellsRefs,
+          })
         > {
   $$LayoutObjectsTableTableManager(_$AppDatabase db, $LayoutObjectsTable table)
     : super(
@@ -7289,7 +7819,442 @@ class $$LayoutObjectsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({layoutId = false, linkedAreaId = false}) {
+          prefetchHooksCallback:
+              ({
+                layoutId = false,
+                linkedAreaId = false,
+                layoutCellsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (layoutCellsRefs) db.layoutCells,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (layoutId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.layoutId,
+                                    referencedTable:
+                                        $$LayoutObjectsTableReferences
+                                            ._layoutIdTable(db),
+                                    referencedColumn:
+                                        $$LayoutObjectsTableReferences
+                                            ._layoutIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (linkedAreaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.linkedAreaId,
+                                    referencedTable:
+                                        $$LayoutObjectsTableReferences
+                                            ._linkedAreaIdTable(db),
+                                    referencedColumn:
+                                        $$LayoutObjectsTableReferences
+                                            ._linkedAreaIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (layoutCellsRefs)
+                        await $_getPrefetchedData<
+                          LayoutObject,
+                          $LayoutObjectsTable,
+                          LayoutCell
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LayoutObjectsTableReferences
+                              ._layoutCellsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LayoutObjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).layoutCellsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.layoutObjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LayoutObjectsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LayoutObjectsTable,
+      LayoutObject,
+      $$LayoutObjectsTableFilterComposer,
+      $$LayoutObjectsTableOrderingComposer,
+      $$LayoutObjectsTableAnnotationComposer,
+      $$LayoutObjectsTableCreateCompanionBuilder,
+      $$LayoutObjectsTableUpdateCompanionBuilder,
+      (LayoutObject, $$LayoutObjectsTableReferences),
+      LayoutObject,
+      PrefetchHooks Function({
+        bool layoutId,
+        bool linkedAreaId,
+        bool layoutCellsRefs,
+      })
+    >;
+typedef $$LayoutCellsTableCreateCompanionBuilder =
+    LayoutCellsCompanion Function({
+      Value<int> id,
+      required int layoutId,
+      required int layoutObjectId,
+      required int column,
+      required int row,
+    });
+typedef $$LayoutCellsTableUpdateCompanionBuilder =
+    LayoutCellsCompanion Function({
+      Value<int> id,
+      Value<int> layoutId,
+      Value<int> layoutObjectId,
+      Value<int> column,
+      Value<int> row,
+    });
+
+final class $$LayoutCellsTableReferences
+    extends BaseReferences<_$AppDatabase, $LayoutCellsTable, LayoutCell> {
+  $$LayoutCellsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $RoomLayoutsTable _layoutIdTable(_$AppDatabase db) =>
+      db.roomLayouts.createAlias('layout_cells__layout_id__room_layouts__id');
+
+  $$RoomLayoutsTableProcessedTableManager get layoutId {
+    final $_column = $_itemColumn<int>('layout_id')!;
+
+    final manager = $$RoomLayoutsTableTableManager(
+      $_db,
+      $_db.roomLayouts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_layoutIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LayoutObjectsTable _layoutObjectIdTable(_$AppDatabase db) => db
+      .layoutObjects
+      .createAlias('layout_cells__layout_object_id__layout_objects__id');
+
+  $$LayoutObjectsTableProcessedTableManager get layoutObjectId {
+    final $_column = $_itemColumn<int>('layout_object_id')!;
+
+    final manager = $$LayoutObjectsTableTableManager(
+      $_db,
+      $_db.layoutObjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_layoutObjectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LayoutCellsTableFilterComposer
+    extends Composer<_$AppDatabase, $LayoutCellsTable> {
+  $$LayoutCellsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get column => $composableBuilder(
+    column: $table.column,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get row => $composableBuilder(
+    column: $table.row,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RoomLayoutsTableFilterComposer get layoutId {
+    final $$RoomLayoutsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.layoutId,
+      referencedTable: $db.roomLayouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoomLayoutsTableFilterComposer(
+            $db: $db,
+            $table: $db.roomLayouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LayoutObjectsTableFilterComposer get layoutObjectId {
+    final $$LayoutObjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.layoutObjectId,
+      referencedTable: $db.layoutObjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutObjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.layoutObjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LayoutCellsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LayoutCellsTable> {
+  $$LayoutCellsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get column => $composableBuilder(
+    column: $table.column,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get row => $composableBuilder(
+    column: $table.row,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RoomLayoutsTableOrderingComposer get layoutId {
+    final $$RoomLayoutsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.layoutId,
+      referencedTable: $db.roomLayouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoomLayoutsTableOrderingComposer(
+            $db: $db,
+            $table: $db.roomLayouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LayoutObjectsTableOrderingComposer get layoutObjectId {
+    final $$LayoutObjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.layoutObjectId,
+      referencedTable: $db.layoutObjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutObjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.layoutObjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LayoutCellsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LayoutCellsTable> {
+  $$LayoutCellsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get column =>
+      $composableBuilder(column: $table.column, builder: (column) => column);
+
+  GeneratedColumn<int> get row =>
+      $composableBuilder(column: $table.row, builder: (column) => column);
+
+  $$RoomLayoutsTableAnnotationComposer get layoutId {
+    final $$RoomLayoutsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.layoutId,
+      referencedTable: $db.roomLayouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoomLayoutsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.roomLayouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LayoutObjectsTableAnnotationComposer get layoutObjectId {
+    final $$LayoutObjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.layoutObjectId,
+      referencedTable: $db.layoutObjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LayoutObjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.layoutObjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LayoutCellsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LayoutCellsTable,
+          LayoutCell,
+          $$LayoutCellsTableFilterComposer,
+          $$LayoutCellsTableOrderingComposer,
+          $$LayoutCellsTableAnnotationComposer,
+          $$LayoutCellsTableCreateCompanionBuilder,
+          $$LayoutCellsTableUpdateCompanionBuilder,
+          (LayoutCell, $$LayoutCellsTableReferences),
+          LayoutCell,
+          PrefetchHooks Function({bool layoutId, bool layoutObjectId})
+        > {
+  $$LayoutCellsTableTableManager(_$AppDatabase db, $LayoutCellsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LayoutCellsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LayoutCellsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LayoutCellsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> layoutId = const Value.absent(),
+                Value<int> layoutObjectId = const Value.absent(),
+                Value<int> column = const Value.absent(),
+                Value<int> row = const Value.absent(),
+              }) => LayoutCellsCompanion(
+                id: id,
+                layoutId: layoutId,
+                layoutObjectId: layoutObjectId,
+                column: column,
+                row: row,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int layoutId,
+                required int layoutObjectId,
+                required int column,
+                required int row,
+              }) => LayoutCellsCompanion.insert(
+                id: id,
+                layoutId: layoutId,
+                layoutObjectId: layoutObjectId,
+                column: column,
+                row: row,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LayoutCellsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({layoutId = false, layoutObjectId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -7314,23 +8279,23 @@ class $$LayoutObjectsTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.layoutId,
-                                referencedTable: $$LayoutObjectsTableReferences
+                                referencedTable: $$LayoutCellsTableReferences
                                     ._layoutIdTable(db),
-                                referencedColumn: $$LayoutObjectsTableReferences
+                                referencedColumn: $$LayoutCellsTableReferences
                                     ._layoutIdTable(db)
                                     .id,
                               )
                               as T;
                     }
-                    if (linkedAreaId) {
+                    if (layoutObjectId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.linkedAreaId,
-                                referencedTable: $$LayoutObjectsTableReferences
-                                    ._linkedAreaIdTable(db),
-                                referencedColumn: $$LayoutObjectsTableReferences
-                                    ._linkedAreaIdTable(db)
+                                currentColumn: table.layoutObjectId,
+                                referencedTable: $$LayoutCellsTableReferences
+                                    ._layoutObjectIdTable(db),
+                                referencedColumn: $$LayoutCellsTableReferences
+                                    ._layoutObjectIdTable(db)
                                     .id,
                               )
                               as T;
@@ -7347,19 +8312,19 @@ class $$LayoutObjectsTableTableManager
       );
 }
 
-typedef $$LayoutObjectsTableProcessedTableManager =
+typedef $$LayoutCellsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $LayoutObjectsTable,
-      LayoutObject,
-      $$LayoutObjectsTableFilterComposer,
-      $$LayoutObjectsTableOrderingComposer,
-      $$LayoutObjectsTableAnnotationComposer,
-      $$LayoutObjectsTableCreateCompanionBuilder,
-      $$LayoutObjectsTableUpdateCompanionBuilder,
-      (LayoutObject, $$LayoutObjectsTableReferences),
-      LayoutObject,
-      PrefetchHooks Function({bool layoutId, bool linkedAreaId})
+      $LayoutCellsTable,
+      LayoutCell,
+      $$LayoutCellsTableFilterComposer,
+      $$LayoutCellsTableOrderingComposer,
+      $$LayoutCellsTableAnnotationComposer,
+      $$LayoutCellsTableCreateCompanionBuilder,
+      $$LayoutCellsTableUpdateCompanionBuilder,
+      (LayoutCell, $$LayoutCellsTableReferences),
+      LayoutCell,
+      PrefetchHooks Function({bool layoutId, bool layoutObjectId})
     >;
 typedef $$RemindersTableCreateCompanionBuilder =
     RemindersCompanion Function({
@@ -7668,6 +8633,8 @@ class $AppDatabaseManager {
       $$RoomLayoutsTableTableManager(_db, _db.roomLayouts);
   $$LayoutObjectsTableTableManager get layoutObjects =>
       $$LayoutObjectsTableTableManager(_db, _db.layoutObjects);
+  $$LayoutCellsTableTableManager get layoutCells =>
+      $$LayoutCellsTableTableManager(_db, _db.layoutCells);
   $$RemindersTableTableManager get reminders =>
       $$RemindersTableTableManager(_db, _db.reminders);
 }

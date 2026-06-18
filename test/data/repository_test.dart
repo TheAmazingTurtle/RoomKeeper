@@ -198,6 +198,38 @@ void main() {
     expect(payments, isEmpty);
   });
 
+  test(
+    'repository persists contiguous layout cells and rejects islands',
+    () async {
+      final database = inMemoryDatabaseForTests();
+      addTearDown(database.close);
+      final repository = RoomkeeperRepository(database);
+
+      await repository.ensureDefaults();
+      final layout = await repository.getPrimaryLayout();
+      final bed = (await repository.getLayoutObjects(
+        layout!.id,
+      )).firstWhere((object) => object.label == 'Bed');
+
+      await repository.replaceLayoutObjectCells(
+        object: bed,
+        cells: {(column: 1, row: 1), (column: 2, row: 1), (column: 2, row: 2)},
+      );
+
+      final cells = await repository.getLayoutCells(layout.id);
+      expect(cells, hasLength(3));
+      expect(cells.map((cell) => cell.layoutObjectId).toSet(), {bed.id});
+
+      await expectLater(
+        repository.replaceLayoutObjectCells(
+          object: bed,
+          cells: {(column: 1, row: 1), (column: 5, row: 5)},
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
   test('deleting room item removes managed stored photo file', () async {
     final database = inMemoryDatabaseForTests();
     addTearDown(database.close);

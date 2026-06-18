@@ -98,6 +98,19 @@ class LayoutObjects extends Table {
   IntColumn get zOrder => integer().withDefault(const Constant(0))();
 }
 
+class LayoutCells extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get layoutId => integer().references(RoomLayouts, #id)();
+  IntColumn get layoutObjectId => integer().references(LayoutObjects, #id)();
+  IntColumn get column => integer()();
+  IntColumn get row => integer()();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {layoutId, column, row},
+  ];
+}
+
 class Reminders extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get ownerType => text().withLength(min: 1, max: 40)();
@@ -121,6 +134,7 @@ class Reminders extends Table {
     TodoItems,
     RoomLayouts,
     LayoutObjects,
+    LayoutCells,
     Reminders,
   ],
 )
@@ -128,11 +142,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator migrator) => migrator.createAll(),
+    onUpgrade: (Migrator migrator, int from, int to) async {
+      if (from < 2) {
+        await migrator.createTable(layoutCells);
+      }
+    },
     beforeOpen: (OpeningDetails details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
