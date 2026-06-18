@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:roomkeeper/src/data/roomkeeper_repository.dart';
@@ -125,6 +127,62 @@ void main() {
       );
       expect(updated.lowStockThreshold, 6);
       expect(updated.notes, 'Restocked');
+    },
+  );
+
+  test('deleting room item removes managed stored photo file', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+    final temp = await Directory.systemTemp.createTemp(
+      'roomkeeper_managed_photo_test',
+    );
+    addTearDown(() => temp.delete(recursive: true));
+    final photoDir = Directory('${temp.path}/inventory_photos');
+    await photoDir.create();
+    final photo = File('${photoDir.path}/item.jpg');
+    await photo.writeAsBytes([1, 2, 3]);
+
+    await repository.ensureDefaults();
+    final id = await repository.addInventoryItem(
+      name: 'Lamp',
+      photoPath: photo.path,
+    );
+
+    await repository.deleteInventoryItem(id);
+
+    expect(await photo.exists(), isFalse);
+    expect(await repository.getInventoryItems(), isEmpty);
+  });
+
+  test(
+    'deleting room item keeps unrelated or missing photo paths safe',
+    () async {
+      final database = inMemoryDatabaseForTests();
+      addTearDown(database.close);
+      final repository = RoomkeeperRepository(database);
+      final temp = await Directory.systemTemp.createTemp(
+        'roomkeeper_unmanaged_photo_test',
+      );
+      addTearDown(() => temp.delete(recursive: true));
+      final galleryPhoto = File('${temp.path}/gallery-original.jpg');
+      await galleryPhoto.writeAsBytes([1, 2, 3]);
+
+      await repository.ensureDefaults();
+      final galleryItem = await repository.addInventoryItem(
+        name: 'Gallery item',
+        photoPath: galleryPhoto.path,
+      );
+      final missingItem = await repository.addInventoryItem(
+        name: 'Missing item',
+        photoPath: '${temp.path}/inventory_photos/missing.jpg',
+      );
+
+      await repository.deleteInventoryItem(galleryItem);
+      await repository.deleteInventoryItem(missingItem);
+
+      expect(await galleryPhoto.exists(), isTrue);
+      expect(await repository.getInventoryItems(), isEmpty);
     },
   );
 }
