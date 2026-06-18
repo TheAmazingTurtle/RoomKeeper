@@ -51,6 +51,9 @@ void main() {
           layoutObjectsProvider(
             layout.id,
           ).overrideWithValue(const AsyncValue.data([bedObject])),
+          layoutCellsProvider(
+            layout.id,
+          ).overrideWithValue(const AsyncValue.data(<LayoutCell>[])),
         ],
         child: const MaterialApp(home: RoomScreen()),
       ),
@@ -59,20 +62,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Add area'), findsOneWidget);
-    expect(find.textContaining('Tap an area to edit it'), findsOneWidget);
+    expect(find.text('View'), findsOneWidget);
+    expect(find.text('Paint'), findsOneWidget);
+    expect(find.textContaining('View mode'), findsOneWidget);
 
-    await tester.tap(find.text('Bed').first);
+    await tester.tap(find.bySemanticsLabel('Bed cell').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Editing'), findsOneWidget);
     expect(find.text('Area details'), findsOneWidget);
     expect(find.text('Area name'), findsOneWidget);
     expect(find.text('Area type'), findsOneWidget);
     expect(find.text('Inventory area'), findsOneWidget);
     expect(find.text('Save area'), findsOneWidget);
-    expect(find.text('Position & size'), findsOneWidget);
-    expect(find.text('Rotation'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Delete room area'));
     await tester.pump();
@@ -119,6 +121,9 @@ void main() {
           layoutObjectsProvider(
             layout.id,
           ).overrideWithValue(const AsyncValue.data([])),
+          layoutCellsProvider(
+            layout.id,
+          ).overrideWithValue(const AsyncValue.data(<LayoutCell>[])),
         ],
         child: const MaterialApp(home: RoomScreen()),
       ),
@@ -216,6 +221,9 @@ void main() {
           layoutObjectsProvider(
             layout.id,
           ).overrideWithValue(const AsyncValue.data([bedObject])),
+          layoutCellsProvider(
+            layout.id,
+          ).overrideWithValue(const AsyncValue.data(<LayoutCell>[])),
         ],
         child: const MaterialApp(home: RoomScreen()),
       ),
@@ -223,7 +231,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    await tester.tap(find.text('Bed').first);
+    await tester.tap(find.bySemanticsLabel('Bed cell').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -242,6 +250,70 @@ void main() {
 
     await tester.tap(find.text('Close'));
     await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('paint mode exposes cell editing controls', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final layout = RoomLayout(
+      id: 1,
+      name: 'My Room',
+      width: 360,
+      height: 520,
+      gridSize: 20,
+      updatedAt: DateTime(2026),
+    );
+    const bedArea = Area(
+      id: 1,
+      name: 'Bed',
+      type: 'bed',
+      colorHex: '#10B981',
+      sortOrder: 0,
+    );
+    const bedObject = LayoutObject(
+      id: 1,
+      layoutId: 1,
+      linkedAreaId: 1,
+      label: 'Bed',
+      kind: 'furniture',
+      x: 32,
+      y: 320,
+      width: 180,
+      height: 150,
+      rotation: 0,
+      colorHex: '#10B981',
+      zOrder: 1,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          primaryLayoutProvider.overrideWithValue(AsyncValue.data(layout)),
+          areasProvider.overrideWithValue(const AsyncValue.data([bedArea])),
+          inventoryProvider.overrideWithValue(const AsyncValue.data([])),
+          layoutObjectsProvider(
+            layout.id,
+          ).overrideWithValue(const AsyncValue.data([bedObject])),
+          layoutCellsProvider(
+            layout.id,
+          ).overrideWithValue(const AsyncValue.data(<LayoutCell>[])),
+        ],
+        child: const MaterialApp(home: RoomScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.bySemanticsLabel('Bed cell').first);
+    await tester.pump();
+    await tester.tap(find.text('Paint'));
+    await tester.pump();
+
+    expect(find.textContaining('Paint mode'), findsOneWidget);
+    expect(find.byTooltip('Erase cells'), findsOneWidget);
+
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

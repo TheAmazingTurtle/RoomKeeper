@@ -5,6 +5,8 @@ import 'package:path/path.dart' as p;
 
 import 'database.dart';
 
+typedef LayoutCellPosition = ({int column, int row});
+
 const defaultAreaSpecs = [
   ('Kitchen', 'kitchen', '#F97316'),
   ('Restroom', 'restroom', '#06B6D4'),
@@ -549,8 +551,72 @@ class RoomkeeperRepository {
         .write(object.toCompanion(true));
   }
 
-  Future<void> deleteLayoutObject(int id) {
-    return (db.delete(
+  Stream<List<LayoutCell>> watchLayoutCells(int layoutId) {
+    final query = db.select(db.layoutCells)
+      ..where((table) => table.layoutId.equals(layoutId))
+      ..orderBy([
+        (table) => OrderingTerm(expression: table.row),
+        (table) => OrderingTerm(expression: table.column),
+      ]);
+    return query.watch();
+  }
+
+  Future<List<LayoutCell>> getLayoutCells(int layoutId) {
+    return (db.select(db.layoutCells)
+          ..where((table) => table.layoutId.equals(layoutId))
+          ..orderBy([
+            (table) => OrderingTerm(expression: table.row),
+            (table) => OrderingTerm(expression: table.column),
+          ]))
+        .get();
+  }
+
+  Future<void> replaceLayoutObjectCells({
+    required LayoutObject object,
+    required Set<LayoutCellPosition> cells,
+  }) async {
+    if (cells.isEmpty) {
+      throw ArgumentError.value(cells, 'cells', 'A room area needs cells.');
+    }
+    if (!_isContiguous(cells)) {
+      throw ArgumentError.value(
+        cells,
+        'cells',
+        'Room area cells must stay connected.',
+      );
+    }
+
+    await db.transaction(() async {
+      await (db.delete(
+        db.layoutCells,
+      )..where((table) => table.layoutObjectId.equals(object.id))).go();
+      for (final cell in cells) {
+        await (db.delete(db.layoutCells)..where(
+              (table) =>
+                  table.layoutId.equals(object.layoutId) &
+                  table.column.equals(cell.column) &
+                  table.row.equals(cell.row),
+            ))
+            .go();
+        await db
+            .into(db.layoutCells)
+            .insert(
+              LayoutCellsCompanion.insert(
+                layoutId: object.layoutId,
+                layoutObjectId: object.id,
+                column: cell.column,
+                row: cell.row,
+              ),
+            );
+      }
+    });
+  }
+
+  Future<void> deleteLayoutObject(int id) async {
+    await (db.delete(
+      db.layoutCells,
+    )..where((table) => table.layoutObjectId.equals(id))).go();
+    await (db.delete(
       db.layoutObjects,
     )..where((table) => table.id.equals(id))).go();
   }
@@ -625,4 +691,28 @@ class RoomkeeperRepository {
       ),
     );
   }
+}
+
+bool _isContiguous(Set<LayoutCellPosition> cells) {
+  if (cells.length <= 1) return true;
+  final remaining = cells.toSet();
+  final queue = <LayoutCellPosition>[remaining.first];
+  remaining.remove(queue.first);
+
+  while (queue.isNotEmpty) {
+    final current = queue.removeLast();
+    final neighbors = [
+      (column: current.column + 1, row: current.row),
+      (column: current.column - 1, row: current.row),
+      (column: current.column, row: current.row + 1),
+      (column: current.column, row: current.row - 1),
+    ];
+    for (final neighbor in neighbors) {
+      if (remaining.remove(neighbor)) {
+        queue.add(neighbor);
+      }
+    }
+  }
+
+  return remaining.isEmpty;
 }

@@ -18,6 +18,8 @@ class RoomScreen extends ConsumerStatefulWidget {
 
 class _RoomScreenState extends ConsumerState<RoomScreen> {
   int? _selectedObjectId;
+  bool _editing = false;
+  bool _erasing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
 
     final objects =
         ref.watch(layoutObjectsProvider(layout.id)).value ?? const [];
+    final cells = ref.watch(layoutCellsProvider(layout.id)).value ?? const [];
     LayoutObject? selected;
     for (final object in objects) {
       if (object.id == _selectedObjectId) {
@@ -66,10 +69,20 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
       body: RoomKeeperPage(
         bottomPadding: 96,
         children: [
+          _RoomModeBar(
+            editing: _editing,
+            erasing: _erasing,
+            onEditingChanged: (value) => setState(() => _editing = value),
+            onErasingChanged: (value) => setState(() => _erasing = value),
+          ),
+          const SizedBox(height: 12),
           _RoomCanvas(
             layout: layout,
             objects: objects,
+            cells: cells,
             selectedId: _selectedObjectId,
+            editing: _editing,
+            erasing: _erasing,
             onSelect: (id) => setState(() => _selectedObjectId = id),
           ),
           const SizedBox(height: 16),
@@ -89,17 +102,79 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
   }
 }
 
+class _RoomModeBar extends StatelessWidget {
+  const _RoomModeBar({
+    required this.editing,
+    required this.erasing,
+    required this.onEditingChanged,
+    required this.onErasingChanged,
+  });
+
+  final bool editing;
+  final bool erasing;
+  final ValueChanged<bool> onEditingChanged;
+  final ValueChanged<bool> onErasingChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return RoomKeeperCard(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.visibility_outlined),
+                    label: Text('View'),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.grid_on_outlined),
+                    label: Text('Paint'),
+                  ),
+                ],
+                selected: {editing},
+                onSelectionChanged: (value) => onEditingChanged(value.single),
+              ),
+            ),
+            if (editing) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: erasing ? 'Paint cells' : 'Erase cells',
+                isSelected: erasing,
+                icon: Icon(
+                  erasing ? Icons.brush_outlined : Icons.cleaning_services,
+                ),
+                onPressed: () => onErasingChanged(!erasing),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RoomCanvas extends ConsumerWidget {
   const _RoomCanvas({
     required this.layout,
     required this.objects,
+    required this.cells,
     required this.selectedId,
+    required this.editing,
+    required this.erasing,
     required this.onSelect,
   });
 
   final RoomLayout layout;
   final List<LayoutObject> objects;
+  final List<LayoutCell> cells;
   final int? selectedId;
+  final bool editing;
+  final bool erasing;
   final ValueChanged<int?> onSelect;
 
   @override
@@ -109,6 +184,28 @@ class _RoomCanvas extends ConsumerWidget {
         final width = constraints.maxWidth;
         final scale = width / layout.width;
         final height = layout.height * scale;
+        final columns = math.max(1, (layout.width / layout.gridSize).round());
+        final rows = math.max(1, (layout.height / layout.gridSize).round());
+        final cellWidth = width / columns;
+        final cellHeight = height / rows;
+        final objectsById = {for (final object in objects) object.id: object};
+        final persisted = <({int column, int row}), LayoutObject>{};
+        final cellsByObject = <int, Set<({int column, int row})>>{};
+        for (final cell in cells) {
+          final object = objectsById[cell.layoutObjectId];
+          if (object == null) continue;
+          final key = (column: cell.column, row: cell.row);
+          persisted[key] = object;
+          cellsByObject.putIfAbsent(object.id, () => {}).add(key);
+        }
+        final painted = _fallbackObjectCells(
+          objects: objects,
+          persisted: persisted,
+          cellsByObject: cellsByObject,
+          gridSize: layout.gridSize,
+          columns: columns,
+          rows: rows,
+        );
 
         return Container(
           width: width,
@@ -121,184 +218,186 @@ class _RoomCanvas extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
+              GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: columns * rows,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  childAspectRatio: cellWidth / cellHeight,
+                ),
+                itemBuilder: (context, index) {
+                  final column = index % columns;
+                  final row = index ~/ columns;
+                  final key = (column: column, row: row);
+                  final object = painted[key];
+                  final selected = object?.id == selectedId;
+                  return _PaintCell(
+                    object: object,
+                    selected: selected,
+                    onTap: () => _handleCellTap(
+                      context: context,
+                      ref: ref,
+                      key: key,
+                      object: object,
+                      selectedObject: selectedId == null
+                          ? null
+                          : objectsById[selectedId],
+                      cellsByObject: cellsByObject,
+                    ),
+                  );
+                },
+              ),
               Positioned(
                 left: 12,
                 right: 12,
                 top: 12,
-                child: _CanvasHelpBanner(hasObjects: objects.isNotEmpty),
-              ),
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _GridPainter(
-                    gridSize: layout.gridSize * scale,
-                    color: Theme.of(context).dividerColor,
-                  ),
+                child: _CanvasHelpBanner(
+                  hasObjects: objects.isNotEmpty,
+                  editing: editing,
                 ),
               ),
-              Positioned.fill(
-                child: GestureDetector(onTap: () => onSelect(null)),
-              ),
               if (objects.isEmpty) const Center(child: _EmptyCanvasMessage()),
-              ...objects.map((object) {
-                return _CanvasObject(
-                  layout: layout,
-                  object: object,
-                  scale: scale,
-                  selected: object.id == selectedId,
-                  onSelect: () => onSelect(object.id),
-                );
-              }),
             ],
           ),
         );
       },
     );
   }
+
+  Future<void> _handleCellTap({
+    required BuildContext context,
+    required WidgetRef ref,
+    required ({int column, int row}) key,
+    required LayoutObject? object,
+    required LayoutObject? selectedObject,
+    required Map<int, Set<({int column, int row})>> cellsByObject,
+  }) async {
+    if (!editing) {
+      onSelect(object?.id);
+      return;
+    }
+    if (selectedObject == null) {
+      onSelect(object?.id);
+      if (object == null) {
+        _showCellMessage(context, 'Select or add an area before painting.');
+      }
+      return;
+    }
+
+    final next = {...?cellsByObject[selectedObject.id]};
+    if (next.isEmpty) {
+      next.addAll(
+        _rectangleCellsFor(
+          selectedObject,
+          layout.gridSize,
+          math.max(1, (layout.width / layout.gridSize).round()),
+          math.max(1, (layout.height / layout.gridSize).round()),
+        ),
+      );
+    }
+    if (erasing) {
+      next.remove(key);
+    } else {
+      next.add(key);
+    }
+
+    try {
+      await ref
+          .read(repositoryProvider)
+          .replaceLayoutObjectCells(object: selectedObject, cells: next);
+      onSelect(selectedObject.id);
+    } on ArgumentError catch (error) {
+      if (!context.mounted) return;
+      _showCellMessage(context, error.message?.toString() ?? 'Invalid shape.');
+    }
+  }
+
+  void _showCellMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 }
 
-class _CanvasObject extends ConsumerWidget {
-  const _CanvasObject({
-    required this.layout,
+class _PaintCell extends StatelessWidget {
+  const _PaintCell({
     required this.object,
-    required this.scale,
     required this.selected,
-    required this.onSelect,
+    required this.onTap,
   });
 
-  final RoomLayout layout;
-  final LayoutObject object;
-  final double scale;
+  final LayoutObject? object;
   final bool selected;
-  final VoidCallback onSelect;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final color = _parseColor(object.colorHex);
-    return Positioned(
-      left: object.x * scale,
-      top: object.y * scale,
-      width: object.width * scale,
-      height: object.height * scale,
-      child: Transform.rotate(
-        angle: object.rotation * math.pi / 180,
-        child: GestureDetector(
-          onTap: onSelect,
-          onPanUpdate: (details) {
-            final next = object.copyWith(
-              x: _snap(
-                object.x + details.delta.dx / scale,
-                layout.gridSize,
-              ).clamp(0, layout.width - object.width).toDouble(),
-              y: _snap(
-                object.y + details.delta.dy / scale,
-                layout.gridSize,
-              ).clamp(0, layout.height - object.height).toDouble(),
-            );
-            ref.read(repositoryProvider).updateLayoutObject(next);
-          },
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.28),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: selected ? Theme.of(context).colorScheme.primary : color,
-                width: selected ? 3 : 1.5,
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.28),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Stack(
-              children: [
-                if (selected)
-                  Positioned(
-                    left: 6,
-                    top: 6,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        child: Text(
-                          'Editing',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ),
-                    ),
-                  ),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Text(
-                      object.label,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-                if (selected)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        final next = object.copyWith(
-                          width: _snap(
-                            object.width + details.delta.dx / scale,
-                            layout.gridSize,
-                          ).clamp(40, layout.width - object.x).toDouble(),
-                          height: _snap(
-                            object.height + details.delta.dy / scale,
-                            layout.gridSize,
-                          ).clamp(40, layout.height - object.y).toDouble(),
-                        );
-                        ref.read(repositoryProvider).updateLayoutObject(next);
-                      },
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.open_in_full,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+  Widget build(BuildContext context) {
+    final color = object == null
+        ? Colors.transparent
+        : _parseColor(object!.colorHex);
+    return Semantics(
+      button: true,
+      label: object == null ? 'Empty cell' : '${object!.label} cell',
+      child: GestureDetector(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: object == null
+                ? Theme.of(context).colorScheme.surface
+                : color.withValues(alpha: selected ? 0.72 : 0.46),
+            border: Border.all(
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor.withValues(alpha: 0.65),
+              width: selected ? 1.8 : 0.45,
             ),
           ),
         ),
       ),
     );
   }
+}
+
+Map<({int column, int row}), LayoutObject> _fallbackObjectCells({
+  required List<LayoutObject> objects,
+  required Map<({int column, int row}), LayoutObject> persisted,
+  required Map<int, Set<({int column, int row})>> cellsByObject,
+  required double gridSize,
+  required int columns,
+  required int rows,
+}) {
+  final result = {...persisted};
+  for (final object in objects) {
+    if (cellsByObject.containsKey(object.id)) continue;
+    for (final cell in _rectangleCellsFor(object, gridSize, columns, rows)) {
+      result.putIfAbsent(cell, () => object);
+    }
+  }
+  return result;
+}
+
+Set<({int column, int row})> _rectangleCellsFor(
+  LayoutObject object,
+  double gridSize,
+  int columns,
+  int rows,
+) {
+  final startColumn = (object.x / gridSize).floor().clamp(0, columns - 1);
+  final startRow = (object.y / gridSize).floor().clamp(0, rows - 1);
+  final endColumn = ((object.x + object.width) / gridSize).ceil().clamp(
+    startColumn + 1,
+    columns,
+  );
+  final endRow = ((object.y + object.height) / gridSize).ceil().clamp(
+    startRow + 1,
+    rows,
+  );
+  return {
+    for (var row = startRow; row < endRow; row++)
+      for (var column = startColumn; column < endColumn; column++)
+        (column: column, row: row),
+  };
 }
 
 class _SelectedObjectPanel extends ConsumerStatefulWidget {
@@ -397,20 +496,6 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Rotate area',
-                  icon: const Icon(Icons.rotate_right),
-                  onPressed: () {
-                    ref
-                        .read(repositoryProvider)
-                        .updateLayoutObject(
-                          object.copyWith(
-                            rotation: (object.rotation + 15) % 360,
-                          ),
-                        );
-                    _showSnackBar('Room area rotated.');
-                  },
-                ),
-                IconButton(
                   tooltip: 'Delete room area',
                   icon: const Icon(Icons.delete_outline),
                   onPressed: _deleteObject,
@@ -493,60 +578,6 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                 icon: const Icon(Icons.check),
                 label: const Text('Save area'),
               ),
-            ),
-            const Divider(height: 28),
-            Text(
-              'Position & size',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            _ObjectSlider(
-              label: 'Left',
-              value: object.x,
-              max: widget.layout.width - object.width,
-              onChanged: (value) => _updateObject(
-                object.copyWith(x: _snap(value, widget.layout.gridSize)),
-              ),
-            ),
-            _ObjectSlider(
-              label: 'Top',
-              value: object.y,
-              max: widget.layout.height - object.height,
-              onChanged: (value) => _updateObject(
-                object.copyWith(y: _snap(value, widget.layout.gridSize)),
-              ),
-            ),
-            _ObjectSlider(
-              label: 'Width',
-              value: object.width,
-              min: 40,
-              max: widget.layout.width - object.x,
-              onChanged: (value) => _updateObject(
-                object.copyWith(width: _snap(value, widget.layout.gridSize)),
-              ),
-            ),
-            _ObjectSlider(
-              label: 'Height',
-              value: object.height,
-              min: 40,
-              max: widget.layout.height - object.y,
-              onChanged: (value) => _updateObject(
-                object.copyWith(height: _snap(value, widget.layout.gridSize)),
-              ),
-            ),
-            _ObjectSlider(
-              label: 'Rotation',
-              value: object.rotation,
-              max: 345,
-              divisions: 23,
-              onChanged: (value) => _updateObject(
-                object.copyWith(rotation: _snap(value, 15) % 360),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Drag the selected area to move it. Use the corner handle or sliders for precise sizing.',
-              style: Theme.of(context).textTheme.bodySmall,
             ),
             const Divider(height: 28),
             Wrap(
@@ -704,9 +735,10 @@ class _RoomSummary extends StatelessWidget {
 }
 
 class _CanvasHelpBanner extends StatelessWidget {
-  const _CanvasHelpBanner({required this.hasObjects});
+  const _CanvasHelpBanner({required this.hasObjects, required this.editing});
 
   final bool hasObjects;
+  final bool editing;
 
   @override
   Widget build(BuildContext context) {
@@ -720,9 +752,11 @@ class _CanvasHelpBanner extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Text(
-          hasObjects
-              ? 'Tap an area to edit it. Drag to move, or use the corner handle to resize.'
-              : 'Add your first room area, then link it to inventory.',
+          editing
+              ? 'Paint mode: select an area, then tap grid cells to paint or erase.'
+              : hasObjects
+              ? 'View mode: tap a colored cell to inspect that area.'
+              : 'Add your first room area, then paint it onto the grid.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ),
@@ -941,82 +975,6 @@ class _ColorPicker extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ObjectSlider extends StatelessWidget {
-  const _ObjectSlider({
-    required this.label,
-    required this.value,
-    required this.max,
-    required this.onChanged,
-    this.min = 0,
-    this.divisions,
-  });
-
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final int? divisions;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final effectiveMax = math.max(min, max);
-    final effectiveValue = value.clamp(min, effectiveMax).toDouble();
-    return Row(
-      children: [
-        SizedBox(width: 72, child: Text(label)),
-        Expanded(
-          child: Slider(
-            min: min,
-            max: effectiveMax,
-            divisions: divisions,
-            value: effectiveValue,
-            label: effectiveValue.round().toString(),
-            onChanged: onChanged,
-          ),
-        ),
-        SizedBox(
-          width: 44,
-          child: Text(
-            effectiveValue.round().toString(),
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GridPainter extends CustomPainter {
-  _GridPainter({required this.gridSize, required this.color});
-
-  final double gridSize;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.42)
-      ..strokeWidth = 0.6;
-    for (double x = 0; x <= size.width; x += gridSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y <= size.height; y += gridSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _GridPainter oldDelegate) {
-    return oldDelegate.gridSize != gridSize || oldDelegate.color != color;
-  }
-}
-
-double _snap(double value, double grid) {
-  if (grid <= 0) return value;
-  return (value / grid).round() * grid;
 }
 
 Color _parseColor(String hex) {
