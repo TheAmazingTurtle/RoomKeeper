@@ -136,4 +136,46 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('expired food status does not crowd details on narrow width', (
+    tester,
+  ) async {
+    await initializeDateFormatting('en_PH');
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime.now();
+    final food = FoodStock(
+      id: 1,
+      name: 'Emergency noodles',
+      areaId: null,
+      category: 'Pantry shelf',
+      quantity: 1,
+      unit: 'pack',
+      expiryDate: now.subtract(const Duration(days: 1)),
+      lowStockThreshold: 2,
+      notes: 'Replace this week',
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          areasProvider.overrideWithValue(const AsyncValue.data(<Area>[])),
+          foodProvider.overrideWithValue(AsyncValue.data([food])),
+        ],
+        child: const MaterialApp(home: FoodScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Emergency noodles'), findsOneWidget);
+    expect(find.text('Expired'), findsOneWidget);
+    expect(find.text('Low stock'), findsOneWidget);
+    expect(find.textContaining('1 pack'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
