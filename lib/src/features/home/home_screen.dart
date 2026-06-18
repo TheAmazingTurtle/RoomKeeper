@@ -15,60 +15,24 @@ class HomeScreen extends ConsumerWidget {
     final inventory = ref.watch(inventoryProvider).value ?? const [];
     final foods = ref.watch(foodProvider).value ?? const [];
     final reminders = ref.watch(activeRemindersProvider).value ?? const [];
-    final todos = ref.watch(todosProvider).value ?? const [];
     final laundry = ref.watch(laundryProvider).value ?? const [];
     final payments = ref.watch(paymentsProvider).value ?? const [];
     final now = DateTime.now();
     final soon = now.add(const Duration(days: 7));
     final upcoming = reminders
-        .where((reminder) => reminder.scheduledAt.isBefore(soon))
+        .where(
+          (reminder) =>
+              reminder.ownerType != 'todo' &&
+              reminder.scheduledAt.isBefore(soon),
+        )
         .toList();
     final foodAttention = foods
         .map((food) => _FoodAttention.from(food, soon))
         .where((attention) => attention.needsAttention)
         .toList();
-    final openTodos = todos.where((todo) => !todo.isDone).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('RoomKeeper'),
-        actions: [
-          IconButton(
-            tooltip: 'Save a backup file',
-            icon: const Icon(Icons.save_alt_outlined),
-            onPressed: () => _saveBackup(context, ref),
-          ),
-          PopupMenuButton<_BackupAction>(
-            tooltip: 'Backup options',
-            onSelected: (action) {
-              switch (action) {
-                case _BackupAction.share:
-                  _shareBackup(context, ref);
-                case _BackupAction.import:
-                  _importBackup(context, ref);
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: _BackupAction.share,
-                child: ListTile(
-                  leading: Icon(Icons.ios_share),
-                  title: Text('Share a backup'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: _BackupAction.import,
-                child: ListTile(
-                  leading: Icon(Icons.upload_file),
-                  title: Text('Restore from backup'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('RoomKeeper')),
       body: RoomKeeperPage(
         children: [
           Text(
@@ -77,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'A quick check of your room, food, reminders, and logs.',
+            'A quick check of your inventory, food, laundry, and bills.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -104,18 +68,18 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => context.go('/food'),
               ),
               _MetricCard(
-                icon: Icons.check_circle_outline,
-                label: 'Tasks left',
-                value: '${openTodos.length}',
+                icon: Icons.local_laundry_service_outlined,
+                label: 'Laundry',
+                value: '${laundry.length}',
                 color: const Color(0xFF16A34A),
-                onTap: () => context.go('/tasks'),
+                onTap: () => context.go('/laundry'),
               ),
               _MetricCard(
-                icon: Icons.notifications_active_outlined,
-                label: 'Reminders',
-                value: '${upcoming.length}',
+                icon: Icons.receipt_long_outlined,
+                label: 'Bills',
+                value: '${payments.length}',
                 color: const Color(0xFF9333EA),
-                onTap: () => context.go('/tasks'),
+                onTap: () => context.go('/bills'),
               ),
             ],
           ),
@@ -167,7 +131,7 @@ class HomeScreen extends ConsumerWidget {
                   trailing: laundry.first.nextReminderAt == null
                       ? null
                       : Text(formatDate(laundry.first.nextReminderAt)),
-                  onTap: () => context.go('/tasks'),
+                  onTap: () => context.go('/laundry'),
                 ),
               if (payments.isNotEmpty)
                 ListTile(
@@ -177,7 +141,7 @@ class HomeScreen extends ConsumerWidget {
                     '${payments.first.billingMonth} - ${formatDate(payments.first.paidAt)}',
                   ),
                   trailing: Text(formatPesoCents(payments.first.amountCents)),
-                  onTap: () => context.go('/tasks'),
+                  onTap: () => context.go('/bills'),
                 ),
             ],
           ),
@@ -185,87 +149,7 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Future<void> _saveBackup(BuildContext context, WidgetRef ref) async {
-    try {
-      final file = await ref.read(backupServiceProvider).saveBackupFile();
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Backup saved: ${file.path}')));
-      }
-    } catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save backup: $error')),
-        );
-      }
-    }
-  }
-
-  Future<void> _shareBackup(BuildContext context, WidgetRef ref) async {
-    try {
-      await ref.read(backupServiceProvider).shareBackupFile();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Backup is ready to share.')),
-        );
-      }
-    } catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not share backup: $error')),
-        );
-      }
-    }
-  }
-
-  Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
-    try {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Restore backup?'),
-          content: const Text(
-            'This will replace the RoomKeeper data currently saved on this device.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Choose file'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) {
-        return;
-      }
-      final imported = await ref.read(backupServiceProvider).importFromPicker();
-      if (imported) {
-        await ref.read(reminderServiceProvider).rescheduleActiveReminders();
-      }
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(imported ? 'Backup restored.' : 'Restore cancelled.'),
-          ),
-        );
-      }
-    } catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not restore backup: $error')),
-        );
-      }
-    }
-  }
 }
-
-enum _BackupAction { share, import }
 
 class _FoodAttention {
   const _FoodAttention({

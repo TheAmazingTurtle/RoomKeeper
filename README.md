@@ -2,8 +2,7 @@
 
 RoomKeeper is an Android-first Flutter app for keeping a practical local record
 of a boarding house room. It tracks belongings by room area, food stock,
-laundry history, rent and utilities payments, simple to-dos, and a lightweight
-2D room layout.
+laundry counters, and rent and utilities payments.
 
 The app is intentionally local-first. It has no account system, backend, or
 cloud sync.
@@ -14,13 +13,9 @@ cloud sync.
   optional local photo.
 - Food stock tracker with quantity, unit, storage area, category, expiry date,
   and low-stock threshold.
-- Laundry history with optional next-laundry reminder.
+- Laundry basket counters for everyday clothing categories.
 - Rent and utilities payment logs with PHP amounts, billing month, and optional
   next-payment reminder.
-- Simple to-do list with due dates and optional local reminders.
-- Visual room layout editor with draggable, resizable, rotatable objects linked
-  to inventory areas.
-- Manual JSON backup and import, including inventory photo restore.
 
 ## Tech Stack
 
@@ -31,7 +26,6 @@ cloud sync.
 - Drift with SQLite for local structured storage
 - flutter_local_notifications with Asia/Manila timezone defaults
 - image_picker for optional inventory photos
-- file_picker and share_plus for manual backup/import flows
 
 ## Android Details
 
@@ -57,10 +51,8 @@ lib/
       home/
       inventory/
       food/
-      tasks/
-      room/
+      laundry_bills/
     services/
-      backup_service.dart
       image_storage_service.dart
       notification_gateway.dart
       reminder_service.dart
@@ -123,8 +115,7 @@ when SQLite native assets are prepared concurrently.
 
 Current test coverage includes:
 
-- Default area/layout seeding and core repository persistence.
-- Backup export/import round-trip, including local inventory photos.
+- Default area seeding and core repository persistence.
 - Reminder scheduling and cancellation through a fake notification gateway.
 - Dashboard rendering with provider overrides.
 
