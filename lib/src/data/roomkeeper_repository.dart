@@ -249,6 +249,12 @@ class RoomkeeperRepository {
         );
   }
 
+  Future<void> updateFoodStock(FoodStock food) {
+    return (db.update(db.foodStocks)
+          ..where((table) => table.id.equals(food.id)))
+        .write(food.toCompanion(true));
+  }
+
   Future<void> deleteFoodStock(int id) {
     return (db.delete(
       db.foodStocks,
