@@ -108,6 +108,25 @@ flutter test -r expanded --concurrency=1
 Do not commit, push, open a PR, or merge unless the user explicitly asks for
 that action.
 
+## GitHub Issue Creation Workflow
+
+When adding a GitHub issue:
+
+1. Confirm the user wants a GitHub issue created, not just a local task note.
+2. Write a concise issue title that names the user-visible problem or outcome.
+3. Include a practical body with:
+   - Problem or goal
+   - Expected behavior
+   - Relevant context, files, screenshots, or logs
+   - Acceptance criteria or verification steps
+4. Add labels, assignees, milestone, or project fields only when the user asks
+   or the repo convention is clear.
+5. Create the issue with the GitHub app or `gh issue create` when available.
+6. Report the issue number and URL back to the user.
+
+Do not create branches, commits, or PRs from a new issue unless the user also
+asks Codex to start implementation.
+
 ## GitHub Issue Workflow
 
 When handling a GitHub issue:
