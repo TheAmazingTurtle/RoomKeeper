@@ -21,6 +21,9 @@ void main() {
           laundryProvider.overrideWithValue(
             const AsyncValue.data(<LaundryLog>[]),
           ),
+          laundryBasketProvider.overrideWithValue(
+            const AsyncValue.data(<LaundryBasketItem>[]),
+          ),
           paymentsProvider.overrideWithValue(
             const AsyncValue.data(<PaymentLog>[]),
           ),
@@ -69,6 +72,9 @@ void main() {
           laundryProvider.overrideWithValue(
             const AsyncValue.data(<LaundryLog>[]),
           ),
+          laundryBasketProvider.overrideWithValue(
+            const AsyncValue.data(<LaundryBasketItem>[]),
+          ),
           paymentsProvider.overrideWithValue(
             const AsyncValue.data(<PaymentLog>[]),
           ),
@@ -80,12 +86,11 @@ void main() {
 
     await tester.tap(find.text('Laundry'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add laundry'));
+    await tester.tap(find.text('Add item'));
     await tester.pump();
 
-    expect(find.text('Laundry date'), findsOneWidget);
-    expect(find.text('Next reminder'), findsOneWidget);
-    expect(find.text('No reminder'), findsNothing);
+    expect(find.text('Add laundry item'), findsOneWidget);
+    expect(find.text('Item type'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Cancel'));
@@ -106,6 +111,9 @@ void main() {
           todosProvider.overrideWithValue(const AsyncValue.data(<TodoItem>[])),
           laundryProvider.overrideWithValue(
             const AsyncValue.data(<LaundryLog>[]),
+          ),
+          laundryBasketProvider.overrideWithValue(
+            const AsyncValue.data(<LaundryBasketItem>[]),
           ),
           paymentsProvider.overrideWithValue(
             const AsyncValue.data(<PaymentLog>[]),
@@ -161,11 +169,14 @@ void main() {
       createdAt: now,
       updatedAt: now,
     );
-    final laundry = LaundryLog(
+    final laundry = LaundryBasketItem(
       id: 2,
-      completedAt: now,
-      notes: 'Sheets',
-      nextReminderAt: now.add(const Duration(days: 7)),
+      name: 'Shirt',
+      count: 2,
+      isDefault: true,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
     );
     final payment = PaymentLog(
       id: 3,
@@ -181,7 +192,10 @@ void main() {
       ProviderScope(
         overrides: [
           todosProvider.overrideWithValue(AsyncValue.data([todo])),
-          laundryProvider.overrideWithValue(AsyncValue.data([laundry])),
+          laundryProvider.overrideWithValue(
+            const AsyncValue.data(<LaundryLog>[]),
+          ),
+          laundryBasketProvider.overrideWithValue(AsyncValue.data([laundry])),
           paymentsProvider.overrideWithValue(AsyncValue.data([payment])),
         ],
         child: const MaterialApp(home: TasksScreen()),
@@ -211,8 +225,11 @@ void main() {
 
     await tester.tap(find.text('Laundry'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Edit laundry log'), findsOneWidget);
-    expect(find.byTooltip('Delete laundry log'), findsOneWidget);
+    expect(find.text('Shirt'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.byTooltip('Add one Shirt'), findsOneWidget);
+    expect(find.byTooltip('Remove one Shirt'), findsOneWidget);
+    expect(find.byTooltip('Reset basket'), findsOneWidget);
 
     await tester.tap(find.text('Bills'));
     await tester.pumpAndSettle();

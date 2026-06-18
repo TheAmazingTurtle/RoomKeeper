@@ -37,6 +37,9 @@ class BackupService {
         'laundryLogs': (await _db.select(_db.laundryLogs).get())
             .map((row) => row.toJson())
             .toList(),
+        'laundryBasketItems': (await _db.select(_db.laundryBasketItems).get())
+            .map((row) => row.toJson())
+            .toList(),
         'paymentLogs': (await _db.select(_db.paymentLogs).get())
             .map((row) => row.toJson())
             .toList(),
@@ -47,6 +50,9 @@ class BackupService {
             .map((row) => row.toJson())
             .toList(),
         'layoutObjects': (await _db.select(_db.layoutObjects).get())
+            .map((row) => row.toJson())
+            .toList(),
+        'layoutCells': (await _db.select(_db.layoutCells).get())
             .map((row) => row.toJson())
             .toList(),
         'reminders': (await _db.select(_db.reminders).get())
@@ -142,6 +148,9 @@ class BackupService {
       tables,
       'laundryLogs',
     ).map((json) => LaundryLog.fromJson(json).toCompanion(true)).toList();
+    final laundryBasketItems = _rows(tables, 'laundryBasketItems')
+        .map((json) => LaundryBasketItem.fromJson(json).toCompanion(true))
+        .toList();
     final paymentLogs = _rows(
       tables,
       'paymentLogs',
@@ -158,6 +167,10 @@ class BackupService {
       tables,
       'layoutObjects',
     ).map((json) => LayoutObject.fromJson(json).toCompanion(true)).toList();
+    final layoutCells = _rows(
+      tables,
+      'layoutCells',
+    ).map((json) => LayoutCell.fromJson(json).toCompanion(true)).toList();
     final reminders = _rows(
       tables,
       'reminders',
@@ -170,10 +183,12 @@ class BackupService {
         batch.insertAll(_db.inventoryItems, inventoryItems);
         batch.insertAll(_db.foodStocks, foodStocks);
         batch.insertAll(_db.laundryLogs, laundryLogs);
+        batch.insertAll(_db.laundryBasketItems, laundryBasketItems);
         batch.insertAll(_db.paymentLogs, paymentLogs);
         batch.insertAll(_db.todoItems, todoItems);
         batch.insertAll(_db.roomLayouts, roomLayouts);
         batch.insertAll(_db.layoutObjects, layoutObjects);
+        batch.insertAll(_db.layoutCells, layoutCells);
         batch.insertAll(_db.reminders, reminders);
       });
     });
@@ -251,10 +266,12 @@ class BackupService {
 
   Future<void> _deleteAll() async {
     await _db.delete(_db.reminders).go();
+    await _db.delete(_db.layoutCells).go();
     await _db.delete(_db.layoutObjects).go();
     await _db.delete(_db.roomLayouts).go();
     await _db.delete(_db.todoItems).go();
     await _db.delete(_db.paymentLogs).go();
+    await _db.delete(_db.laundryBasketItems).go();
     await _db.delete(_db.laundryLogs).go();
     await _db.delete(_db.foodStocks).go();
     await _db.delete(_db.inventoryItems).go();
