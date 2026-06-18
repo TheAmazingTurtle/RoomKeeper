@@ -331,6 +331,19 @@ class RoomkeeperRepository {
     return query.watch();
   }
 
+  Future<List<TodoItem>> getTodoItems() {
+    return (db.select(db.todoItems)..orderBy([
+          (table) => OrderingTerm(expression: table.isDone),
+          (table) =>
+              OrderingTerm(expression: table.dueAt, nulls: NullsOrder.last),
+          (table) => OrderingTerm(
+            expression: table.createdAt,
+            mode: OrderingMode.desc,
+          ),
+        ]))
+        .get();
+  }
+
   Future<int> addTodoItem({
     required String title,
     String? notes,

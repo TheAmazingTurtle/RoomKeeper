@@ -232,6 +232,28 @@ class HomeScreen extends ConsumerWidget {
 
   Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
     try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Replace current data?'),
+          content: const Text(
+            'Importing a backup replaces the current RoomKeeper data on this device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Choose backup'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) {
+        return;
+      }
       final imported = await ref.read(backupServiceProvider).importFromPicker();
       if (imported) {
         await ref.read(reminderServiceProvider).rescheduleActiveReminders();
