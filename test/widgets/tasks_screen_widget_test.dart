@@ -192,6 +192,16 @@ void main() {
     expect(find.byTooltip('Edit task'), findsOneWidget);
     expect(find.byTooltip('Delete task'), findsOneWidget);
 
+    await tester.tap(find.byTooltip('Delete task'));
+    await tester.pump();
+    expect(find.text('Delete to-do?'), findsOneWidget);
+    expect(
+      find.text('Delete "Clean sink"? This cannot be undone.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+
     await tester.tap(find.byTooltip('Edit task'));
     await tester.pump();
     expect(find.text('Edit to-do'), findsOneWidget);

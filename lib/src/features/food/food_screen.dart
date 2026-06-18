@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../providers.dart';
+import '../../shared/delete_confirmation.dart';
 import '../../shared/formatters.dart';
 
 class FoodScreen extends ConsumerWidget {
@@ -130,8 +131,20 @@ class _FoodTile extends ConsumerWidget {
             IconButton(
               tooltip: 'Delete food',
               icon: const Icon(Icons.delete_outline),
-              onPressed: () =>
-                  ref.read(repositoryProvider).deleteFoodStock(food.id),
+              onPressed: () async {
+                final confirmed = await confirmDelete(
+                  context: context,
+                  title: 'Delete food item?',
+                  itemName: food.name,
+                );
+                if (!confirmed) return;
+                await ref.read(repositoryProvider).deleteFoodStock(food.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${food.name} deleted.')),
+                  );
+                }
+              },
             ),
           ],
         ),

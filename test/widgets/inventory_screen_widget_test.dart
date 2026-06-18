@@ -139,4 +139,48 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('room item delete asks for confirmation with item name', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime(2026);
+    final item = InventoryItem(
+      id: 1,
+      name: 'Rice cooker',
+      areaId: null,
+      quantity: 1,
+      condition: 'Good',
+      notes: null,
+      photoPath: null,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          areasProvider.overrideWithValue(const AsyncValue.data(<Area>[])),
+          inventoryProvider.overrideWithValue(AsyncValue.data([item])),
+        ],
+        child: const MaterialApp(home: InventoryScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Delete item'));
+    await tester.pump();
+
+    expect(find.text('Delete room item?'), findsOneWidget);
+    expect(
+      find.text('Delete "Rice cooker"? This cannot be undone.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

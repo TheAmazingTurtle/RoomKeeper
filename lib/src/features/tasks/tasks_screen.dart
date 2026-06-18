@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../providers.dart';
+import '../../shared/delete_confirmation.dart';
 import '../../shared/formatters.dart';
 
 class TasksScreen extends StatelessWidget {
@@ -125,10 +126,21 @@ class _TodoTile extends ConsumerWidget {
             tooltip: 'Delete task',
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
+              final confirmed = await confirmDelete(
+                context: context,
+                title: 'Delete to-do?',
+                itemName: todo.title,
+              );
+              if (!confirmed) return;
               await ref
                   .read(reminderServiceProvider)
                   .cancelOwnerReminders(ownerType: 'todo', ownerId: todo.id);
               await ref.read(repositoryProvider).deleteTodoItem(todo.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${todo.title} deleted.')),
+                );
+              }
             },
           ),
         ],
@@ -192,6 +204,12 @@ class _LaundryTab extends ConsumerWidget {
                             tooltip: 'Delete laundry log',
                             icon: const Icon(Icons.delete_outline),
                             onPressed: () async {
+                              final confirmed = await confirmDelete(
+                                context: context,
+                                title: 'Delete laundry log?',
+                                itemName: formatDate(log.completedAt),
+                              );
+                              if (!confirmed) return;
                               await ref
                                   .read(reminderServiceProvider)
                                   .cancelOwnerReminders(
@@ -201,6 +219,13 @@ class _LaundryTab extends ConsumerWidget {
                               await ref
                                   .read(repositoryProvider)
                                   .deleteLaundryLog(log.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Laundry log deleted.'),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ],
@@ -274,6 +299,13 @@ class _PaymentsTab extends ConsumerWidget {
                             tooltip: 'Delete payment log',
                             icon: const Icon(Icons.delete_outline),
                             onPressed: () async {
+                              final confirmed = await confirmDelete(
+                                context: context,
+                                title: 'Delete payment log?',
+                                itemName:
+                                    '${payment.billType} ${payment.billingMonth}',
+                              );
+                              if (!confirmed) return;
                               await ref
                                   .read(reminderServiceProvider)
                                   .cancelOwnerReminders(
@@ -283,6 +315,13 @@ class _PaymentsTab extends ConsumerWidget {
                               await ref
                                   .read(repositoryProvider)
                                   .deletePaymentLog(payment.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Payment log deleted.'),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ],
