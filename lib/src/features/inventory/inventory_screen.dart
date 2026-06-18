@@ -275,43 +275,63 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
                 onChanged: (value) => setState(() => _areaId = value),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _quantityController,
-                      decoration: const InputDecoration(labelText: 'Quantity'),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        final parsed = int.tryParse(value ?? '');
-                        return parsed == null || parsed < 1
-                            ? 'Use 1 or more'
-                            : null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _condition,
-                      decoration: const InputDecoration(labelText: 'Condition'),
-                      items: const [
-                        DropdownMenuItem(value: 'Good', child: Text('Good')),
-                        DropdownMenuItem(value: 'Used', child: Text('Used')),
-                        DropdownMenuItem(
-                          value: 'Needs repair',
-                          child: Text('Needs repair'),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final fieldWidth = constraints.maxWidth < 360
+                      ? constraints.maxWidth
+                      : (constraints.maxWidth - 12) / 2;
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      SizedBox(
+                        width: fieldWidth,
+                        child: TextFormField(
+                          controller: _quantityController,
+                          decoration: const InputDecoration(
+                            labelText: 'Quantity',
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            final parsed = int.tryParse(value ?? '');
+                            return parsed == null || parsed < 1
+                                ? 'Use 1 or more'
+                                : null;
+                          },
                         ),
-                        DropdownMenuItem(
-                          value: 'Missing',
-                          child: Text('Missing'),
+                      ),
+                      SizedBox(
+                        width: fieldWidth,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _condition,
+                          decoration: const InputDecoration(
+                            labelText: 'Condition',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'Good',
+                              child: Text('Good'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Used',
+                              child: Text('Used'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Needs repair',
+                              child: Text('Needs repair'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Missing',
+                              child: Text('Missing'),
+                            ),
+                          ],
+                          onChanged: (value) =>
+                              setState(() => _condition = value ?? _condition),
                         ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _condition = value ?? _condition),
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               TextFormField(
