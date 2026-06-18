@@ -79,7 +79,10 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byTooltip('View food details'));
+    expect(find.byTooltip('Remove one Eggs'), findsOneWidget);
+    expect(find.byTooltip('Add one Eggs'), findsOneWidget);
+
+    await tester.tap(find.text('Eggs'));
     await tester.pump();
 
     expect(find.text('Notes'), findsOneWidget);
@@ -123,8 +126,8 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byTooltip('Delete food'));
-    await tester.pump();
+    await tester.drag(find.text('Eggs'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
 
     expect(find.text('Delete food item?'), findsOneWidget);
     expect(

@@ -225,6 +225,18 @@ class RoomkeeperRepository {
         .write(item.toCompanion(true));
   }
 
+  Future<void> changeInventoryQuantity(InventoryItem item, int delta) {
+    final next = (item.quantity + delta).clamp(0, 999).toInt();
+    return (db.update(
+      db.inventoryItems,
+    )..where((table) => table.id.equals(item.id))).write(
+      InventoryItemsCompanion(
+        quantity: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<void> deleteInventoryItem(int id) async {
     final item = await (db.select(
       db.inventoryItems,
@@ -300,6 +312,18 @@ class RoomkeeperRepository {
     return (db.update(db.foodStocks)
           ..where((table) => table.id.equals(food.id)))
         .write(food.toCompanion(true));
+  }
+
+  Future<void> changeFoodQuantity(FoodStock food, double delta) {
+    final next = (food.quantity + delta).clamp(0, 999).toDouble();
+    return (db.update(
+      db.foodStocks,
+    )..where((table) => table.id.equals(food.id))).write(
+      FoodStocksCompanion(
+        quantity: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<void> deleteFoodStock(int id) {

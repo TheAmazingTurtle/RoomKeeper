@@ -83,82 +83,68 @@ class _FoodTile extends ConsumerWidget {
         food.quantity <= food.lowStockThreshold!;
 
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: expired
-              ? Theme.of(context).colorScheme.errorContainer
-              : Theme.of(context).colorScheme.secondaryContainer,
-          child: Icon(expired ? Icons.warning_amber_rounded : Icons.kitchen),
+      clipBehavior: Clip.antiAlias,
+      child: Dismissible(
+        key: ValueKey('food-${food.id}'),
+        direction: DismissDirection.endToStart,
+        background: const DeleteSwipeBackground(),
+        confirmDismiss: (_) => confirmDelete(
+          context: context,
+          title: 'Delete food item?',
+          itemName: food.name,
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(food.name),
-            if (expiresSoon || lowStock) ...[
-              const SizedBox(height: 6),
-              _FoodStatusChips(
-                expired: expired,
-                expiresSoon: expiresSoon,
-                lowStock: lowStock,
-              ),
+        onDismissed: (_) async {
+          await ref.read(repositoryProvider).deleteFoodStock(food.id);
+          if (context.mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('${food.name} deleted.')));
+          }
+        },
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: expired
+                ? Theme.of(context).colorScheme.errorContainer
+                : Theme.of(context).colorScheme.secondaryContainer,
+            child: Icon(expired ? Icons.warning_amber_rounded : Icons.kitchen),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(food.name),
+              if (expiresSoon || lowStock) ...[
+                const SizedBox(height: 6),
+                _FoodStatusChips(
+                  expired: expired,
+                  expiresSoon: expiresSoon,
+                  lowStock: lowStock,
+                ),
+              ],
             ],
-          ],
-        ),
-        onTap: () => _showFoodDetails(context, food, area),
-        subtitle: Text(
-          [
-            '${compactQuantity(food.quantity)} ${food.unit}',
-            food.category,
-            if (area != null) area!.name,
-            if (food.expiryDate != null)
-              'Expires ${formatDate(food.expiryDate)}',
-            if (food.notes != null) food.notes!,
-          ].join(' • '),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Wrap(
-          spacing: 6,
-          children: [
-            IconButton(
-              tooltip: 'View food details',
-              icon: const Icon(Icons.info_outline),
-              onPressed: () => _showFoodDetails(context, food, area),
-            ),
-            IconButton(
-              tooltip: 'Edit food',
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () async {
-                final saved = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => _FoodDialog(areas: areas, food: food),
-                );
-                if (saved == true && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Food item updated.')),
-                  );
-                }
-              },
-            ),
-            IconButton(
-              tooltip: 'Delete food',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                final confirmed = await confirmDelete(
-                  context: context,
-                  title: 'Delete food item?',
-                  itemName: food.name,
-                );
-                if (!confirmed) return;
-                await ref.read(repositoryProvider).deleteFoodStock(food.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${food.name} deleted.')),
-                  );
-                }
-              },
-            ),
-          ],
+          ),
+          onTap: () => _showFoodDetails(context, food, area),
+          subtitle: Text(
+            [
+              '${compactQuantity(food.quantity)} ${food.unit}',
+              food.category,
+              if (area != null) area!.name,
+              if (food.expiryDate != null)
+                'Expires ${formatDate(food.expiryDate)}',
+              if (food.notes != null) food.notes!,
+            ].join(' • '),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: QuantityStepper(
+            value: compactQuantity(food.quantity),
+            decrementTooltip: 'Remove one ${food.name}',
+            incrementTooltip: 'Add one ${food.name}',
+            canDecrement: food.quantity > 0,
+            onDecrement: () =>
+                ref.read(repositoryProvider).changeFoodQuantity(food, -1),
+            onIncrement: () =>
+                ref.read(repositoryProvider).changeFoodQuantity(food, 1),
+          ),
         ),
       ),
     );
@@ -200,6 +186,21 @@ class _FoodTile extends ConsumerWidget {
             ),
           ),
           actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final saved = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => _FoodDialog(areas: areas, food: food),
+                );
+                if (saved == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Food item updated.')),
+                  );
+                }
+              },
+              child: const Text('Edit'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Close'),

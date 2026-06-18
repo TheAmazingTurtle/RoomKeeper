@@ -134,6 +134,30 @@ void main() {
     },
   );
 
+  test('repository adjusts inventory and food quantities inline', () async {
+    final database = inMemoryDatabaseForTests();
+    addTearDown(database.close);
+    final repository = RoomkeeperRepository(database);
+
+    await repository.addInventoryItem(name: 'Mug', quantity: 2);
+    var item = (await repository.getInventoryItems()).single;
+    await repository.changeInventoryQuantity(item, 1);
+    item = (await repository.getInventoryItems()).single;
+    expect(item.quantity, 3);
+    await repository.changeInventoryQuantity(item, -99);
+    item = (await repository.getInventoryItems()).single;
+    expect(item.quantity, 0);
+
+    await repository.addFoodStock(name: 'Rice', quantity: 2.5, unit: 'kg');
+    var food = (await repository.getFoodStocks()).single;
+    await repository.changeFoodQuantity(food, 1);
+    food = (await repository.getFoodStocks()).single;
+    expect(food.quantity, 3.5);
+    await repository.changeFoodQuantity(food, -99);
+    food = (await repository.getFoodStocks()).single;
+    expect(food.quantity, 0);
+  });
+
   test('repository updates and deletes task and log records', () async {
     final database = inMemoryDatabaseForTests();
     addTearDown(database.close);

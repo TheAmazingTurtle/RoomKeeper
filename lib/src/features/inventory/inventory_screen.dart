@@ -135,62 +135,46 @@ class _InventoryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: _ItemPhoto(path: item.photoPath),
-      title: Text(item.name),
-      onTap: () => _showInventoryDetails(context, item, area),
-      subtitle: Text(
-        [
-          if (area != null) area!.name,
-          'Qty ${item.quantity}',
-          item.condition,
-          if (item.notes != null) item.notes!,
-        ].join(' • '),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+    return Dismissible(
+      key: ValueKey('inventory-${item.id}'),
+      direction: DismissDirection.endToStart,
+      background: const DeleteSwipeBackground(),
+      confirmDismiss: (_) => confirmDelete(
+        context: context,
+        title: 'Delete room item?',
+        itemName: item.name,
       ),
-      trailing: Wrap(
-        spacing: 4,
-        children: [
-          IconButton(
-            tooltip: 'View item details',
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInventoryDetails(context, item, area),
-          ),
-          IconButton(
-            tooltip: 'Edit item',
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () async {
-              final saved = await showDialog<bool>(
-                context: context,
-                builder: (_) => _InventoryItemDialog(areas: areas, item: item),
-              );
-              if (saved == true && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Room item updated.')),
-                );
-              }
-            },
-          ),
-          IconButton(
-            tooltip: 'Delete item',
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () async {
-              final confirmed = await confirmDelete(
-                context: context,
-                title: 'Delete room item?',
-                itemName: item.name,
-              );
-              if (!confirmed) return;
-              await ref.read(repositoryProvider).deleteInventoryItem(item.id);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${item.name} deleted.')),
-                );
-              }
-            },
-          ),
-        ],
+      onDismissed: (_) async {
+        await ref.read(repositoryProvider).deleteInventoryItem(item.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('${item.name} deleted.')));
+        }
+      },
+      child: ListTile(
+        leading: _ItemPhoto(path: item.photoPath),
+        title: Text(item.name),
+        onTap: () => _showInventoryDetails(context, item, area),
+        subtitle: Text(
+          [
+            if (area != null) area!.name,
+            item.condition,
+            if (item.notes != null) item.notes!,
+          ].join(' - '),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: QuantityStepper(
+          value: '${item.quantity}',
+          decrementTooltip: 'Remove one ${item.name}',
+          incrementTooltip: 'Add one ${item.name}',
+          canDecrement: item.quantity > 0,
+          onDecrement: () =>
+              ref.read(repositoryProvider).changeInventoryQuantity(item, -1),
+          onIncrement: () =>
+              ref.read(repositoryProvider).changeInventoryQuantity(item, 1),
+        ),
       ),
     );
   }
@@ -219,6 +203,22 @@ class _InventoryTile extends ConsumerWidget {
             ),
           ),
           actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final saved = await showDialog<bool>(
+                  context: context,
+                  builder: (_) =>
+                      _InventoryItemDialog(areas: areas, item: item),
+                );
+                if (saved == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Room item updated.')),
+                  );
+                }
+              },
+              child: const Text('Edit'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Close'),
