@@ -18,7 +18,6 @@ void main() {
           activeRemindersProvider.overrideWithValue(
             const AsyncValue.data(<Reminder>[]),
           ),
-          todosProvider.overrideWithValue(const AsyncValue.data(<TodoItem>[])),
           laundryProvider.overrideWithValue(
             const AsyncValue.data(<LaundryLog>[]),
           ),
@@ -66,7 +65,6 @@ void main() {
           activeRemindersProvider.overrideWithValue(
             const AsyncValue.data(<Reminder>[]),
           ),
-          todosProvider.overrideWithValue(const AsyncValue.data(<TodoItem>[])),
           laundryProvider.overrideWithValue(
             const AsyncValue.data(<LaundryLog>[]),
           ),
