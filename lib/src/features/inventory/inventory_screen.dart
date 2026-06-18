@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,10 +33,17 @@ class InventoryScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showDialog<void>(
-          context: context,
-          builder: (_) => _InventoryItemDialog(areas: areas),
-        ),
+        onPressed: () async {
+          final saved = await showDialog<bool>(
+            context: context,
+            builder: (_) => _InventoryItemDialog(areas: areas),
+          );
+          if (saved == true && context.mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Room item added.')));
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text('Item'),
       ),
@@ -61,6 +69,7 @@ class InventoryScreen extends ConsumerWidget {
                                 (item) => _InventoryTile(
                                   item: item,
                                   area: areasById[item.areaId],
+                                  areas: areas,
                                 ),
                               )
                               .toList(),
@@ -109,10 +118,15 @@ class InventoryScreen extends ConsumerWidget {
 }
 
 class _InventoryTile extends ConsumerWidget {
-  const _InventoryTile({required this.item, required this.area});
+  const _InventoryTile({
+    required this.item,
+    required this.area,
+    required this.areas,
+  });
 
   final InventoryItem item;
   final Area? area;
+  final List<Area> areas;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -129,11 +143,31 @@ class _InventoryTile extends ConsumerWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: IconButton(
-        tooltip: 'Delete item',
-        icon: const Icon(Icons.delete_outline),
-        onPressed: () =>
-            ref.read(repositoryProvider).deleteInventoryItem(item.id),
+      trailing: Wrap(
+        spacing: 4,
+        children: [
+          IconButton(
+            tooltip: 'Edit item',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () async {
+              final saved = await showDialog<bool>(
+                context: context,
+                builder: (_) => _InventoryItemDialog(areas: areas, item: item),
+              );
+              if (saved == true && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Room item updated.')),
+                );
+              }
+            },
+          ),
+          IconButton(
+            tooltip: 'Delete item',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () =>
+                ref.read(repositoryProvider).deleteInventoryItem(item.id),
+          ),
+        ],
       ),
     );
   }
@@ -161,9 +195,10 @@ class _ItemPhoto extends StatelessWidget {
 }
 
 class _InventoryItemDialog extends ConsumerStatefulWidget {
-  const _InventoryItemDialog({required this.areas});
+  const _InventoryItemDialog({required this.areas, this.item});
 
   final List<Area> areas;
+  final InventoryItem? item;
 
   @override
   ConsumerState<_InventoryItemDialog> createState() =>
@@ -179,6 +214,21 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
   String _condition = 'Good';
   String? _photoPath;
   bool _savingPhoto = false;
+  bool get _isEditing => widget.item != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.item;
+    if (item != null) {
+      _nameController.text = item.name;
+      _quantityController.text = item.quantity.toString();
+      _notesController.text = item.notes ?? '';
+      _areaId = item.areaId;
+      _condition = item.condition;
+      _photoPath = item.photoPath;
+    }
+  }
 
   @override
   void dispose() {
@@ -191,7 +241,7 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add item'),
+      title: Text(_isEditing ? 'Edit item' : 'Add item'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -292,7 +342,10 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(_isEditing ? 'Update' : 'Save'),
+        ),
       ],
     );
   }
@@ -314,18 +367,38 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    await ref
-        .read(repositoryProvider)
-        .addInventoryItem(
-          name: _nameController.text,
-          areaId: _areaId,
-          quantity: int.parse(_quantityController.text),
-          condition: _condition,
-          notes: _notesController.text,
-          photoPath: _photoPath,
-        );
+    final item = widget.item;
+    if (item == null) {
+      await ref
+          .read(repositoryProvider)
+          .addInventoryItem(
+            name: _nameController.text,
+            areaId: _areaId,
+            quantity: int.parse(_quantityController.text),
+            condition: _condition,
+            notes: _notesController.text,
+            photoPath: _photoPath,
+          );
+    } else {
+      await ref
+          .read(repositoryProvider)
+          .updateInventoryItem(
+            item.copyWith(
+              name: _nameController.text.trim(),
+              areaId: Value<int?>(_areaId),
+              quantity: int.parse(_quantityController.text),
+              condition: _condition,
+              notes: Value<String?>(
+                _notesController.text.trim().isEmpty
+                    ? null
+                    : _notesController.text.trim(),
+              ),
+              photoPath: Value<String?>(_photoPath),
+            ),
+          );
+    }
     if (mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     }
   }
 }

@@ -185,6 +185,12 @@ class RoomkeeperRepository {
         );
   }
 
+  Future<void> updateInventoryItem(InventoryItem item) {
+    return (db.update(db.inventoryItems)
+          ..where((table) => table.id.equals(item.id)))
+        .write(item.toCompanion(true));
+  }
+
   Future<void> deleteInventoryItem(int id) {
     return (db.delete(
       db.inventoryItems,
