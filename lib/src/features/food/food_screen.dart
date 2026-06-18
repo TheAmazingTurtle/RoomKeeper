@@ -6,6 +6,7 @@ import '../../data/database.dart';
 import '../../providers.dart';
 import '../../shared/delete_confirmation.dart';
 import '../../shared/formatters.dart';
+import '../../shared/roomkeeper_ui.dart';
 
 class FoodScreen extends ConsumerWidget {
   const FoodScreen({super.key});
@@ -31,22 +32,29 @@ class FoodScreen extends ConsumerWidget {
           }
         },
         icon: const Icon(Icons.add),
-        label: const Text('Food'),
+        label: const Text('Add food'),
       ),
       body: foods.isEmpty
           ? const _EmptyFood()
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemBuilder: (context, index) {
-                final food = foods[index];
-                return _FoodTile(
-                  food: food,
-                  area: areasById[food.areaId],
-                  areas: areas,
-                );
-              },
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemCount: foods.length,
+          : RoomKeeperPage(
+              bottomPadding: 96,
+              children: [
+                SectionHeader(
+                  title: 'Food on hand',
+                  subtitle:
+                      '${foods.length} ${foods.length == 1 ? 'item' : 'items'} tracked',
+                ),
+                ...foods.map(
+                  (food) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _FoodTile(
+                      food: food,
+                      area: areasById[food.areaId],
+                      areas: areas,
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -89,9 +97,10 @@ class _FoodTile extends ConsumerWidget {
             '${compactQuantity(food.quantity)} ${food.unit}',
             food.category,
             if (area != null) area!.name,
-            if (food.expiryDate != null) 'exp ${formatDate(food.expiryDate)}',
+            if (food.expiryDate != null)
+              'Expires ${formatDate(food.expiryDate)}',
             if (food.notes != null) food.notes!,
-          ].join(' - '),
+          ].join(' • '),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -100,12 +109,12 @@ class _FoodTile extends ConsumerWidget {
           children: [
             if (expiresSoon)
               Chip(
-                label: Text(expired ? 'Expired' : 'Soon'),
+                label: Text(expired ? 'Expired' : 'Expiring'),
                 visualDensity: VisualDensity.compact,
               ),
             if (lowStock)
               const Chip(
-                label: Text('Low'),
+                label: Text('Low stock'),
                 visualDensity: VisualDensity.compact,
               ),
             IconButton(
@@ -273,7 +282,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit food' : 'Add food'),
+      title: Text(_isEditing ? 'Edit food item' : 'Add food item'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -283,7 +292,10 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
               TextFormField(
                 controller: _nameController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Food name'),
+                decoration: const InputDecoration(
+                  labelText: 'Food name',
+                  hintText: 'Rice, eggs, coffee',
+                ),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (value) =>
                     value == null || value.trim().isEmpty ? 'Required' : null,
@@ -295,7 +307,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
                 items: [
                   const DropdownMenuItem<int?>(
                     value: null,
-                    child: Text('Unassigned'),
+                    child: Text('No area yet'),
                   ),
                   ...widget.areas.map(
                     (area) => DropdownMenuItem<int?>(
@@ -323,7 +335,10 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _unitController,
-                      decoration: const InputDecoration(labelText: 'Unit'),
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        hintText: 'pcs, kg, packs',
+                      ),
                     ),
                   ),
                 ],
@@ -331,13 +346,17 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _categoryController,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  hintText: 'Pantry, fridge, snacks',
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _lowStockController,
                 decoration: const InputDecoration(
                   labelText: 'Low-stock threshold',
+                  hintText: 'Remind me when quantity reaches...',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -369,7 +388,7 @@ class _FoodDialogState extends ConsumerState<_FoodDialog> {
         ),
         FilledButton(
           onPressed: _save,
-          child: Text(_isEditing ? 'Update' : 'Save'),
+          child: Text(_isEditing ? 'Save changes' : 'Add food'),
         ),
       ],
     );
@@ -460,30 +479,11 @@ class _EmptyFood extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.kitchen_outlined,
-              size: 54,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Stock your first food item',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Track quantity, location, expiry, and low-stock status.',
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const FullPageEmptyState(
+      icon: Icons.kitchen_outlined,
+      title: 'Track your food stock',
+      body:
+          'Add pantry, fridge, or snack items so you can see what is low or expiring soon.',
     );
   }
 }

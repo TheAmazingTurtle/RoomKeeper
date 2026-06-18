@@ -32,9 +32,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('RoomKeeper'), findsOneWidget);
-    expect(find.text('Room check'), findsOneWidget);
+    expect(find.text('Today at home'), findsOneWidget);
     expect(find.text('Upcoming reminders'), findsOneWidget);
-    expect(find.text('Food attention'), findsOneWidget);
+    expect(find.text('Food to check'), findsOneWidget);
   });
 
   testWidgets('dashboard shows food needing multiple attention statuses once', (

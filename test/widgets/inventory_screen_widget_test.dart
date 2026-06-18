@@ -33,11 +33,11 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('Item'));
+    await tester.tap(find.text('Add item'));
     await tester.pump();
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Add item').last);
     await tester.pump();
     expect(find.text('Required'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -176,6 +176,10 @@ void main() {
     expect(find.text('Delete room item?'), findsOneWidget);
     expect(
       find.text('Delete "Rice cooker"? This cannot be undone.'),
+      findsNothing,
+    );
+    expect(
+      find.text('Remove "Rice cooker" from RoomKeeper? This cannot be undone.'),
       findsOneWidget,
     );
 

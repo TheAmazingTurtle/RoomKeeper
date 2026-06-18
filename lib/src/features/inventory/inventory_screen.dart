@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../providers.dart';
 import '../../shared/delete_confirmation.dart';
+import '../../shared/roomkeeper_ui.dart';
 
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
@@ -46,24 +47,24 @@ class InventoryScreen extends ConsumerWidget {
           }
         },
         icon: const Icon(Icons.add),
-        label: const Text('Item'),
+        label: const Text('Add item'),
       ),
       body: items.isEmpty
           ? const _EmptyInventory()
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          : RoomKeeperPage(
+              bottomPadding: 96,
               children: grouped.entries.map((entry) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        entry.key,
-                        style: Theme.of(context).textTheme.titleMedium,
+                      SectionHeader(
+                        title: entry.key,
+                        subtitle:
+                            '${entry.value.length} ${entry.value.length == 1 ? 'item' : 'items'}',
                       ),
-                      const SizedBox(height: 8),
-                      Card(
+                      RoomKeeperCard(
                         child: Column(
                           children: entry.value
                               .map(
@@ -90,11 +91,14 @@ class InventoryScreen extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add area'),
+          title: const Text('Add storage area'),
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Area name'),
+            decoration: const InputDecoration(
+              labelText: 'Area name',
+              hintText: 'Bed shelf, desk drawer, cabinet',
+            ),
             textCapitalization: TextCapitalization.words,
           ),
           actions: [
@@ -104,7 +108,7 @@ class InventoryScreen extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Save'),
+              child: const Text('Add area'),
             ),
           ],
         );
@@ -141,7 +145,7 @@ class _InventoryTile extends ConsumerWidget {
           'Qty ${item.quantity}',
           item.condition,
           if (item.notes != null) item.notes!,
-        ].join(' - '),
+        ].join(' • '),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
@@ -376,7 +380,7 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit item' : 'Add item'),
+      title: Text(_isEditing ? 'Edit room item' : 'Add room item'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -386,7 +390,10 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
               TextFormField(
                 controller: _nameController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Item name'),
+                decoration: const InputDecoration(
+                  labelText: 'Item name',
+                  hintText: 'Rice cooker, fan, blanket',
+                ),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (value) =>
                     value == null || value.trim().isEmpty ? 'Required' : null,
@@ -398,7 +405,7 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
                 items: [
                   const DropdownMenuItem<int?>(
                     value: null,
-                    child: Text('Unassigned'),
+                    child: Text('No area yet'),
                   ),
                   ...widget.areas.map(
                     (area) => DropdownMenuItem<int?>(
@@ -471,7 +478,10 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notesController,
-                decoration: const InputDecoration(labelText: 'Notes'),
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  hintText: 'Optional details, serial numbers, or owner notes',
+                ),
                 maxLines: 2,
               ),
               const SizedBox(height: 12),
@@ -485,7 +495,9 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.photo_library_outlined),
-                  label: Text(_photoPath == null ? 'Add photo' : 'Photo added'),
+                  label: Text(
+                    _photoPath == null ? 'Attach photo' : 'Photo attached',
+                  ),
                 ),
               ),
             ],
@@ -499,7 +511,7 @@ class _InventoryItemDialogState extends ConsumerState<_InventoryItemDialog> {
         ),
         FilledButton(
           onPressed: _save,
-          child: Text(_isEditing ? 'Update' : 'Save'),
+          child: Text(_isEditing ? 'Save changes' : 'Add item'),
         ),
       ],
     );
@@ -563,30 +575,11 @@ class _EmptyInventory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 54,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Add your first room item',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Track what is in each area of your boarding house room.',
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const FullPageEmptyState(
+      icon: Icons.inventory_2_outlined,
+      title: 'Start your room inventory',
+      body:
+          'Add items you want to track, then group them by bed, shelf, cabinet, or any area that makes sense.',
     );
   }
 }

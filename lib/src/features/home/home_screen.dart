@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../providers.dart';
 import '../../shared/formatters.dart';
+import '../../shared/roomkeeper_ui.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -33,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('RoomKeeper'),
         actions: [
           IconButton(
-            tooltip: 'Save backup to file',
+            tooltip: 'Save a backup file',
             icon: const Icon(Icons.save_alt_outlined),
             onPressed: () => _saveBackup(context, ref),
           ),
@@ -52,7 +53,7 @@ class HomeScreen extends ConsumerWidget {
                 value: _BackupAction.share,
                 child: ListTile(
                   leading: Icon(Icons.ios_share),
-                  title: Text('Share backup'),
+                  title: Text('Share a backup'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -60,7 +61,7 @@ class HomeScreen extends ConsumerWidget {
                 value: _BackupAction.import,
                 child: ListTile(
                   leading: Icon(Icons.upload_file),
-                  title: Text('Import backup'),
+                  title: Text('Restore from backup'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -68,43 +69,50 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      body: RoomKeeperPage(
         children: [
-          Text('Room check', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 12),
+          Text(
+            'Today at home',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'A quick check of your room, food, reminders, and logs.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: MediaQuery.sizeOf(context).width >= 720 ? 4 : 2,
-            childAspectRatio: 1.55,
+            childAspectRatio: 1.35,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
             children: [
               _MetricCard(
                 icon: Icons.inventory_2_outlined,
-                label: 'Room items',
+                label: 'Inventory',
                 value: '${inventory.length}',
                 color: const Color(0xFF2563EB),
                 onTap: () => context.go('/inventory'),
               ),
               _MetricCard(
                 icon: Icons.kitchen_outlined,
-                label: 'Food stocked',
+                label: 'Food items',
                 value: '${foods.length}',
                 color: const Color(0xFFF97316),
                 onTap: () => context.go('/food'),
               ),
               _MetricCard(
                 icon: Icons.check_circle_outline,
-                label: 'Open tasks',
+                label: 'Tasks left',
                 value: '${openTodos.length}',
                 color: const Color(0xFF16A34A),
                 onTap: () => context.go('/tasks'),
               ),
               _MetricCard(
                 icon: Icons.notifications_active_outlined,
-                label: 'Due soon',
+                label: 'Reminders',
                 value: '${upcoming.length}',
                 color: const Color(0xFF9333EA),
                 onTap: () => context.go('/tasks'),
@@ -112,9 +120,12 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 18),
-          _StatusSection(
+          RoomKeeperSection(
             title: 'Upcoming reminders',
-            emptyText: 'No reminders due in the next 7 days.',
+            subtitle: 'Due in the next 7 days',
+            emptyIcon: Icons.notifications_none_outlined,
+            emptyTitle: 'Nothing due soon',
+            emptyBody: 'Your next week is clear for now.',
             children: upcoming
                 .take(4)
                 .map(
@@ -125,9 +136,12 @@ class HomeScreen extends ConsumerWidget {
                 )
                 .toList(),
           ),
-          _StatusSection(
-            title: 'Food attention',
-            emptyText: 'No expiring or low-stock food right now.',
+          RoomKeeperSection(
+            title: 'Food to check',
+            subtitle: 'Expiring soon or running low',
+            emptyIcon: Icons.kitchen_outlined,
+            emptyTitle: 'Food looks okay',
+            emptyBody: 'No low-stock or expiring food needs attention.',
             children: foodAttention
                 .take(6)
                 .map(
@@ -138,9 +152,12 @@ class HomeScreen extends ConsumerWidget {
                 )
                 .toList(),
           ),
-          _StatusSection(
+          RoomKeeperSection(
             title: 'Recent logs',
-            emptyText: 'Laundry and payment logs will appear here.',
+            subtitle: 'Latest laundry and bill activity',
+            emptyIcon: Icons.history_outlined,
+            emptyTitle: 'No logs yet',
+            emptyBody: 'Laundry and payment records will show here.',
             children: [
               if (laundry.isNotEmpty)
                 ListTile(
@@ -175,13 +192,13 @@ class HomeScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Backup saved to ${file.path}')));
+        ).showSnackBar(SnackBar(content: Text('Backup saved: ${file.path}')));
       }
     } catch (error) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Backup save failed: $error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save backup: $error')),
+        );
       }
     }
   }
@@ -191,14 +208,14 @@ class HomeScreen extends ConsumerWidget {
       await ref.read(backupServiceProvider).shareBackupFile();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Backup prepared for sharing.')),
+          const SnackBar(content: Text('Backup is ready to share.')),
         );
       }
     } catch (error) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Backup export failed: $error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not share backup: $error')),
+        );
       }
     }
   }
@@ -208,9 +225,9 @@ class HomeScreen extends ConsumerWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Replace current data?'),
+          title: const Text('Restore backup?'),
           content: const Text(
-            'Importing a backup replaces the current RoomKeeper data on this device.',
+            'This will replace the RoomKeeper data currently saved on this device.',
           ),
           actions: [
             TextButton(
@@ -219,7 +236,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Choose backup'),
+              child: const Text('Choose file'),
             ),
           ],
         ),
@@ -234,15 +251,15 @@ class HomeScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(imported ? 'Backup restored.' : 'Import cancelled.'),
+            content: Text(imported ? 'Backup restored.' : 'Restore cancelled.'),
           ),
         );
       }
     } catch (error) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Backup import failed: $error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not restore backup: $error')),
+        );
       }
     }
   }
@@ -297,7 +314,7 @@ class _FoodAttentionTile extends StatelessWidget {
           if (attention.isExpiring) 'Expires ${formatDate(food.expiryDate)}',
           if (attention.isLowStock)
             '${compactQuantity(food.quantity)} ${food.unit} left',
-        ].join(' - '),
+        ].join(' • '),
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
@@ -328,7 +345,7 @@ class _MetricCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -341,44 +358,15 @@ class _MetricCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _StatusSection extends StatelessWidget {
-  const _StatusSection({
-    required this.title,
-    required this.emptyText,
-    required this.children,
-  });
-
-  final String title;
-  final String emptyText;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Card(
-            child: children.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(emptyText),
-                  )
-                : Column(children: children),
-          ),
-        ],
       ),
     );
   }
@@ -400,7 +388,7 @@ class _ReminderTile extends StatelessWidget {
       title: Text(reminder.title),
       subtitle: Text(formatDateTime(reminder.scheduledAt)),
       trailing: Chip(
-        label: Text(isOverdue ? 'Overdue' : 'Soon'),
+        label: Text(isOverdue ? 'Overdue' : 'This week'),
         visualDensity: VisualDensity.compact,
       ),
     );

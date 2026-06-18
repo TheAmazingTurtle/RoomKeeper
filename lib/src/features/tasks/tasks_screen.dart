@@ -5,6 +5,7 @@ import '../../data/database.dart';
 import '../../providers.dart';
 import '../../shared/delete_confirmation.dart';
 import '../../shared/formatters.dart';
+import '../../shared/roomkeeper_ui.dart';
 
 class TasksScreen extends StatelessWidget {
   const TasksScreen({super.key});
@@ -27,10 +28,10 @@ class _TasksAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Tasks and logs'),
+      title: const Text('Tasks & bills'),
       bottom: const TabBar(
         tabs: [
-          Tab(icon: Icon(Icons.checklist_outlined), text: 'To-do'),
+          Tab(icon: Icon(Icons.checklist_outlined), text: 'Tasks'),
           Tab(
             icon: Icon(Icons.local_laundry_service_outlined),
             text: 'Laundry',
@@ -61,17 +62,18 @@ class _TodoTab extends ConsumerWidget {
             builder: (_) => const _TodoDialog(),
           ),
           icon: const Icon(Icons.add),
-          label: const Text('Add to-do'),
+          label: const Text('Add task'),
         ),
         const SizedBox(height: 12),
         if (todos.isEmpty)
           const _EmptyMessage(
             icon: Icons.checklist_outlined,
-            title: 'No to-dos yet',
-            body: 'Add quick room tasks and optional reminders.',
+            title: 'No tasks yet',
+            body:
+                'Add chores, errands, or room reminders you do not want to miss.',
           )
         else
-          Card(
+          RoomKeeperCard(
             child: Column(
               children: todos.map((todo) => _TodoTile(todo: todo)).toList(),
             ),
@@ -108,9 +110,9 @@ class _TodoTile extends ConsumerWidget {
         [
           if (todo.dueAt != null) 'Due ${formatDate(todo.dueAt)}',
           if (todo.reminderAt != null)
-            'reminds ${formatDateTime(todo.reminderAt)}',
+            'Reminder ${formatDateTime(todo.reminderAt)}',
           if (todo.notes != null) todo.notes!,
-        ].join(' - '),
+        ].join(' • '),
       ),
       secondary: Wrap(
         children: [
@@ -128,7 +130,7 @@ class _TodoTile extends ConsumerWidget {
             onPressed: () async {
               final confirmed = await confirmDelete(
                 context: context,
-                title: 'Delete to-do?',
+                title: 'Remove task?',
                 itemName: todo.title,
               );
               if (!confirmed) return;
@@ -166,17 +168,18 @@ class _LaundryTab extends ConsumerWidget {
             builder: (_) => const _LaundryDialog(),
           ),
           icon: const Icon(Icons.add),
-          label: const Text('Log laundry'),
+          label: const Text('Add laundry'),
         ),
         const SizedBox(height: 12),
         if (logs.isEmpty)
           const _EmptyMessage(
             icon: Icons.local_laundry_service_outlined,
             title: 'No laundry logs yet',
-            body: 'Record your last laundry and optionally set the next one.',
+            body:
+                'Record laundry days and set the next reminder when you need it.',
           )
         else
-          Card(
+          RoomKeeperCard(
             child: Column(
               children: logs
                   .map(
@@ -186,9 +189,9 @@ class _LaundryTab extends ConsumerWidget {
                       subtitle: Text(
                         [
                           if (log.nextReminderAt != null)
-                            'Next ${formatDateTime(log.nextReminderAt)}',
+                            'Next reminder ${formatDateTime(log.nextReminderAt)}',
                           if (log.notes != null) log.notes!,
-                        ].join(' - '),
+                        ].join(' • '),
                       ),
                       trailing: Wrap(
                         children: [
@@ -256,7 +259,7 @@ class _PaymentsTab extends ConsumerWidget {
             builder: (_) => const _PaymentDialog(),
           ),
           icon: const Icon(Icons.add),
-          label: const Text('Log payment'),
+          label: const Text('Add payment'),
         ),
         const SizedBox(height: 12),
         if (payments.isEmpty)
@@ -264,26 +267,26 @@ class _PaymentsTab extends ConsumerWidget {
             icon: Icons.receipt_long_outlined,
             title: 'No payment logs yet',
             body:
-                'Track rent and utilities with optional next-payment reminders.',
+                'Track rent and utilities, then set reminders for the next bill.',
           )
         else
-          Card(
+          RoomKeeperCard(
             child: Column(
               children: payments
                   .map(
                     (payment) => ListTile(
                       leading: const Icon(Icons.receipt_long_outlined),
                       title: Text(
-                        '${payment.billType.toUpperCase()} - ${payment.billingMonth}',
+                        '${_billTypeLabel(payment.billType)} • ${payment.billingMonth}',
                       ),
                       subtitle: Text(
                         [
                           formatPesoCents(payment.amountCents),
                           'Paid ${formatDate(payment.paidAt)}',
                           if (payment.nextReminderAt != null)
-                            'Next ${formatDateTime(payment.nextReminderAt)}',
+                            'Next reminder ${formatDateTime(payment.nextReminderAt)}',
                           if (payment.notes != null) payment.notes!,
-                        ].join(' - '),
+                        ].join(' • '),
                       ),
                       trailing: Wrap(
                         children: [
@@ -375,7 +378,7 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit to-do' : 'Add to-do'),
+      title: Text(_isEditing ? 'Edit task' : 'Add task'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -385,7 +388,10 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
               TextFormField(
                 controller: _titleController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Task'),
+                decoration: const InputDecoration(
+                  labelText: 'Task',
+                  hintText: 'Clean sink, buy soap, fix cabinet',
+                ),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (value) =>
                     value == null || value.trim().isEmpty ? 'Required' : null,
@@ -393,7 +399,10 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notesController,
-                decoration: const InputDecoration(labelText: 'Notes'),
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  hintText: 'Optional details',
+                ),
                 maxLines: 2,
               ),
               const SizedBox(height: 12),
@@ -433,7 +442,7 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(onPressed: _save, child: const Text('Save task')),
       ],
     );
   }
@@ -511,13 +520,13 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit laundry log' : 'Log laundry'),
+      title: Text(_isEditing ? 'Edit laundry log' : 'Add laundry log'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _DateActionTile(
             icon: Icons.event_available_outlined,
-            title: 'Completed',
+            title: 'Laundry date',
             value: formatDate(_completedAt),
             onTap: () async {
               final picked = await _pickDate(context, _completedAt);
@@ -542,7 +551,10 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
           const SizedBox(height: 12),
           TextField(
             controller: _notesController,
-            decoration: const InputDecoration(labelText: 'Notes'),
+            decoration: const InputDecoration(
+              labelText: 'Notes',
+              hintText: 'Optional notes, load type, or cost',
+            ),
             maxLines: 2,
           ),
         ],
@@ -552,7 +564,7 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(onPressed: _save, child: const Text('Save log')),
       ],
     );
   }
@@ -633,7 +645,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit payment log' : 'Log payment'),
+      title: Text(_isEditing ? 'Edit payment' : 'Add payment'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -660,7 +672,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               TextFormField(
                 controller: _amountController,
                 decoration: const InputDecoration(
-                  labelText: 'Amount',
+                  labelText: 'Amount paid',
                   prefixText: 'PHP ',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
@@ -715,7 +727,10 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notesController,
-                decoration: const InputDecoration(labelText: 'Notes'),
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  hintText: 'Receipt number, shared amount, or notes',
+                ),
                 maxLines: 2,
               ),
             ],
@@ -727,7 +742,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(onPressed: _save, child: const Text('Save payment')),
       ],
     );
   }
@@ -826,6 +841,16 @@ class _DateActionTile extends StatelessWidget {
   }
 }
 
+String _billTypeLabel(String value) {
+  return switch (value) {
+    'rent' => 'Rent',
+    'electricity' => 'Electricity',
+    'water' => 'Water',
+    'internet' => 'Internet',
+    _ => 'Other',
+  };
+}
+
 class _EmptyMessage extends StatelessWidget {
   const _EmptyMessage({
     required this.icon,
@@ -839,18 +864,7 @@ class _EmptyMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 20),
-      child: Column(
-        children: [
-          Icon(icon, size: 54, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 12),
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
-          Text(body, textAlign: TextAlign.center),
-        ],
-      ),
-    );
+    return CompactEmptyState(icon: icon, title: title, body: body);
   }
 }
 
