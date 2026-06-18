@@ -91,17 +91,19 @@ When Codex works in this repository:
 3. For issue work, create or switch to a dedicated branch before making code
    changes.
 4. Keep changes focused on the requested issue or task.
-5. Add or update tests when behavior changes, especially repository, backup,
+5. When the user asks Codex to commit changes, commit incrementally as coherent
+   units of work instead of packaging all changes into one large commit.
+6. Add or update tests when behavior changes, especially repository, backup,
    reminder, or widget behavior.
-6. Run the verification commands before handoff whenever possible:
+7. Run the verification commands before handoff whenever possible:
 
 ```sh
 flutter analyze
 flutter test -r expanded --concurrency=1
 ```
 
-7. If verification cannot be run, note why in the handoff.
-8. Summarize changed files, tests run, and any follow-up risks.
+8. If verification cannot be run, note why in the handoff.
+9. Summarize changed files, tests run, and any follow-up risks.
 
 Do not commit, push, open a PR, or merge unless the user explicitly asks for
 that action.
@@ -113,7 +115,8 @@ When handling a GitHub issue:
 1. Start from an up-to-date `main` branch.
 2. Create a focused branch named with the issue number when available, such as
    `fix/123-reminder-crash` or `feature/123-backup-import`.
-3. Implement the issue on that branch with focused commits.
+3. Implement the issue on that branch with focused, incremental commits as work
+   is completed.
 4. Run verification before pushing:
 
 ```sh
