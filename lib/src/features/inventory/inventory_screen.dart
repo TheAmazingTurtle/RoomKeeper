@@ -133,6 +133,7 @@ class _InventoryTile extends ConsumerWidget {
     return ListTile(
       leading: _ItemPhoto(path: item.photoPath),
       title: Text(item.name),
+      onTap: () => _showInventoryDetails(context, item, area),
       subtitle: Text(
         [
           if (area != null) area!.name,
@@ -146,6 +147,11 @@ class _InventoryTile extends ConsumerWidget {
       trailing: Wrap(
         spacing: 4,
         children: [
+          IconButton(
+            tooltip: 'View item details',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _showInventoryDetails(context, item, area),
+          ),
           IconButton(
             tooltip: 'Edit item',
             icon: const Icon(Icons.edit_outlined),
@@ -169,6 +175,40 @@ class _InventoryTile extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showInventoryDetails(
+    BuildContext context,
+    InventoryItem item,
+    Area? area,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(item.name),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _DetailRow(label: 'Area', value: area?.name ?? 'Unassigned'),
+                _DetailRow(label: 'Quantity', value: item.quantity.toString()),
+                _DetailRow(label: 'Condition', value: item.condition),
+                _DetailRow(label: 'Photo', value: item.photoPath ?? 'None'),
+                _DetailRow(label: 'Notes', value: item.notes ?? 'None'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -250,6 +290,28 @@ class _ItemPhoto extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 2),
+          SelectableText(value),
+        ],
+      ),
     );
   }
 }
