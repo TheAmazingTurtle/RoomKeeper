@@ -119,10 +119,13 @@ When adding a GitHub issue:
    - Expected behavior
    - Relevant context, files, screenshots, or logs
    - Acceptance criteria or verification steps
-4. Add labels, assignees, milestone, or project fields only when the user asks
-   or the repo convention is clear.
-5. Create the issue with the GitHub app or `gh issue create` when available.
-6. Report the issue number and URL back to the user.
+4. Add the appropriate GitHub labels/tags for the issue type and area, following
+   repo conventions when they are clear; otherwise use a sensible label such as
+   `bug`, `enhancement`, `documentation`, or `test`.
+5. Add assignees, milestone, or project fields only when the user asks or the
+   repo convention is clear.
+6. Create the issue with the GitHub app or `gh issue create` when available.
+7. Report the issue number and URL back to the user.
 
 Do not create branches, commits, or PRs from a new issue unless the user also
 asks Codex to start implementation.
@@ -134,20 +137,22 @@ When handling a GitHub issue:
 1. Start from an up-to-date `main` branch.
 2. Create a focused branch named with the issue number when available, such as
    `fix/123-reminder-crash` or `feature/123-backup-import`.
-3. Implement the issue on that branch with focused, incremental commits as work
+3. Check that the issue has appropriate labels/tags, adding them when missing
+   and the correct repo convention is clear.
+4. Implement the issue on that branch with focused, incremental commits as work
    is completed.
-4. Run verification before pushing:
+5. Run verification before pushing:
 
 ```sh
 flutter analyze
 flutter test -r expanded --concurrency=1
 ```
 
-5. Push the branch and open a pull request targeting `main`.
-6. Link the PR to the issue in the PR description with `Closes #123`,
+6. Push the branch and open a pull request targeting `main`.
+7. Link the PR to the issue in the PR description with `Closes #123`,
    `Fixes #123`, or `Resolves #123`.
-7. Wait for checks and review, address feedback, then merge the PR into `main`.
-8. After merge, update local `main` and delete the completed feature branch.
+8. Wait for checks and review, address feedback, then merge the PR into `main`.
+9. After merge, update local `main` and delete the completed feature branch.
 
 Prefer linking the issue to the pull request, because GitHub will close the
 issue automatically when the PR merges.
