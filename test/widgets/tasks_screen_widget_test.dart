@@ -92,4 +92,47 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('payment log dialog opens and validates without date crash', (
+    tester,
+  ) async {
+    await initializeDateFormatting('en_PH');
+    await tester.binding.setSurfaceSize(const Size(800, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          todosProvider.overrideWithValue(const AsyncValue.data(<TodoItem>[])),
+          laundryProvider.overrideWithValue(
+            const AsyncValue.data(<LaundryLog>[]),
+          ),
+          paymentsProvider.overrideWithValue(
+            const AsyncValue.data(<PaymentLog>[]),
+          ),
+        ],
+        child: const MaterialApp(home: TasksScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Bills'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log payment'));
+    await tester.pump();
+
+    expect(find.text('Billing month'), findsOneWidget);
+    expect(find.text('Paid date'), findsOneWidget);
+    expect(find.text('Next reminder'), findsOneWidget);
+
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(find.text('Enter an amount'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
