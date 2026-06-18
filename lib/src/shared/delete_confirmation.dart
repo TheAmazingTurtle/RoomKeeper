@@ -11,7 +11,10 @@ Future<bool> confirmDelete({
     builder: (context) {
       return AlertDialog(
         title: Text(title),
-        content: Text(message ?? 'Delete "$itemName"? This cannot be undone.'),
+        content: Text(
+          message ??
+              'Remove "$itemName" from RoomKeeper? This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -19,7 +22,7 @@ Future<bool> confirmDelete({
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const Text('Remove'),
           ),
         ],
       );

@@ -30,7 +30,7 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('Add to-do'));
+    await tester.tap(find.text('Add task'));
     await tester.pump();
     await tester.enterText(find.byType(TextFormField).first, 'Clean sink');
 
@@ -80,10 +80,10 @@ void main() {
 
     await tester.tap(find.text('Laundry'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Log laundry'));
+    await tester.tap(find.text('Add laundry'));
     await tester.pump();
 
-    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Laundry date'), findsOneWidget);
     expect(find.text('Next reminder'), findsOneWidget);
     expect(find.text('No reminder'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -118,23 +118,23 @@ void main() {
 
     await tester.tap(find.text('Bills'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Log payment'));
+    await tester.tap(find.text('Add payment'));
     await tester.pump();
 
     expect(find.text('Billing month'), findsOneWidget);
     expect(find.text('Paid date'), findsOneWidget);
     expect(find.text('Next reminder'), findsOneWidget);
 
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Save payment'));
     await tester.pump();
 
     expect(find.text('Enter a positive amount'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).first, '0');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Save payment'));
     await tester.pump();
     expect(find.text('Enter a positive amount'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).first, '-10');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Save payment'));
     await tester.pump();
     expect(find.text('Enter a positive amount'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -194,9 +194,9 @@ void main() {
 
     await tester.tap(find.byTooltip('Delete task'));
     await tester.pump();
-    expect(find.text('Delete to-do?'), findsOneWidget);
+    expect(find.text('Remove task?'), findsOneWidget);
     expect(
-      find.text('Delete "Clean sink"? This cannot be undone.'),
+      find.text('Remove "Clean sink" from RoomKeeper? This cannot be undone.'),
       findsOneWidget,
     );
     await tester.tap(find.text('Cancel'));
@@ -204,7 +204,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Edit task'));
     await tester.pump();
-    expect(find.text('Edit to-do'), findsOneWidget);
+    expect(find.text('Edit task'), findsOneWidget);
     expect(find.text('Clean sink'), findsAtLeastNWidgets(1));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -221,7 +221,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Edit payment log'));
     await tester.pump();
-    expect(find.text('Edit payment log'), findsOneWidget);
+    expect(find.text('Edit payment'), findsOneWidget);
     expect(find.text('1200.00'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());

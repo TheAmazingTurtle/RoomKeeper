@@ -25,11 +25,11 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('Food'));
+    await tester.tap(find.text('Add food'));
     await tester.pump();
     await tester.enterText(find.byType(TextFormField).at(0), 'Rice');
     await tester.enterText(find.byType(TextFormField).at(4), 'abc');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Add food').last);
     await tester.pump();
 
     expect(find.text('Use a positive number or leave blank'), findsOneWidget);
@@ -127,7 +127,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Delete food item?'), findsOneWidget);
-    expect(find.text('Delete "Eggs"? This cannot be undone.'), findsOneWidget);
+    expect(
+      find.text('Remove "Eggs" from RoomKeeper? This cannot be undone.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Cancel'));
     await tester.pump();

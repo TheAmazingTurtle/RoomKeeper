@@ -50,18 +50,64 @@ class RoomKeeperApp extends ConsumerWidget {
     final theme = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2563EB),
+        seedColor: const Color(0xFF0F766E),
         brightness: Brightness.light,
       ),
-      cardTheme: const CardThemeData(
-        margin: EdgeInsets.zero,
+      scaffoldBackgroundColor: const Color(0xFFF7F8F5),
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+        scrolledUnderElevation: 0,
+        backgroundColor: Color(0xFFF7F8F5),
+        foregroundColor: Color(0xFF17201D),
+        titleTextStyle: TextStyle(
+          color: Color(0xFF17201D),
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
         ),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
+      navigationBarTheme: const NavigationBarThemeData(
+        height: 72,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      ),
+      cardTheme: CardThemeData(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: Color(0xFFE3E7E1)),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(64, 44),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        elevation: 2,
+        extendedPadding: EdgeInsets.symmetric(horizontal: 18),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
         border: OutlineInputBorder(),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFD7DED8)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.6),
+        ),
+      ),
+      chipTheme: const ChipThemeData(
+        shape: StadiumBorder(),
+        side: BorderSide(color: Color(0xFFE3E7E1)),
       ),
     );
 
@@ -74,7 +120,9 @@ class RoomKeeperApp extends ConsumerWidget {
       error: (error, stackTrace) => MaterialApp(
         title: 'RoomKeeper',
         theme: theme,
-        home: _StartupScaffold(message: 'Startup failed: $error'),
+        home: _StartupScaffold(
+          message: 'RoomKeeper could not open your local data. $error',
+        ),
       ),
       data: (_) => MaterialApp.router(
         title: 'RoomKeeper',
@@ -112,7 +160,7 @@ class RoomKeeperShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
             selectedIcon: Icon(Icons.inventory_2),
-            label: 'Items',
+            label: 'Inventory',
           ),
           NavigationDestination(
             icon: Icon(Icons.kitchen_outlined),
@@ -127,7 +175,7 @@ class RoomKeeperShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.grid_view_outlined),
             selectedIcon: Icon(Icons.grid_view),
-            label: 'Room',
+            label: 'Layout',
           ),
         ],
       ),

@@ -58,30 +58,30 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Room area'), findsOneWidget);
-    expect(
-      find.textContaining('Tap a room area to configure it'),
-      findsOneWidget,
-    );
+    expect(find.text('Add area'), findsOneWidget);
+    expect(find.textContaining('Tap an area to edit it'), findsOneWidget);
 
     await tester.tap(find.text('Bed').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Selected'), findsOneWidget);
-    expect(find.text('Details'), findsOneWidget);
-    expect(find.text('Room area label'), findsOneWidget);
-    expect(find.text('Type'), findsOneWidget);
-    expect(find.text('Linked area'), findsOneWidget);
-    expect(find.text('Apply details'), findsOneWidget);
-    expect(find.text('Position and size'), findsOneWidget);
+    expect(find.text('Editing'), findsOneWidget);
+    expect(find.text('Area details'), findsOneWidget);
+    expect(find.text('Area name'), findsOneWidget);
+    expect(find.text('Area type'), findsOneWidget);
+    expect(find.text('Inventory area'), findsOneWidget);
+    expect(find.text('Save area'), findsOneWidget);
+    expect(find.text('Position & size'), findsOneWidget);
     expect(find.text('Rotation'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Delete room area'));
     await tester.pump();
 
     expect(find.text('Delete room area?'), findsOneWidget);
-    expect(find.text('Delete "Bed"? This cannot be undone.'), findsOneWidget);
+    expect(
+      find.text('Remove "Bed" from RoomKeeper? This cannot be undone.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Cancel'));
     await tester.pump();
@@ -126,9 +126,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    await tester.tap(find.text('Room area').first);
+    await tester.tap(find.text('Add area').first);
     await tester.pump();
-    expect(find.text('Add room area'), findsOneWidget);
+    expect(find.text('Add area to layout'), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).first, 'Window nook');
     await tester.tap(find.text('Zone'));
@@ -136,7 +136,7 @@ void main() {
     await tester.tap(find.text('Storage').last);
     await tester.pump();
 
-    await tester.tap(find.text('None'));
+    await tester.tap(find.text('No inventory link'));
     await tester.pump();
     await tester.tap(find.text('Kitchen').last);
     await tester.pump();
@@ -145,7 +145,7 @@ void main() {
     await tester.pump();
 
     await tester.enterText(find.byType(TextFormField).first, '');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Add area').last);
     await tester.pump();
     expect(find.text('Required'), findsOneWidget);
 
@@ -153,7 +153,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Add room area'), findsNothing);
+    expect(find.text('Add area to layout'), findsNothing);
   });
 
   testWidgets('selected room area shows linked item overflow and full list', (
@@ -228,7 +228,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('8 items'), findsOneWidget);
-    expect(find.text('+2 more linked'), findsOneWidget);
+    expect(find.text('+2 more'), findsOneWidget);
     expect(find.text('Bed item 7'), findsNothing);
 
     await tester.ensureVisible(find.text('View all'));
@@ -236,7 +236,7 @@ void main() {
     await tester.tap(find.text('View all'));
     await tester.pump();
 
-    expect(find.text('Linked items for Bed'), findsOneWidget);
+    expect(find.text('Inventory in Bed'), findsOneWidget);
     expect(find.text('Bed item 7'), findsOneWidget);
     expect(find.text('Bed item 8'), findsOneWidget);
 

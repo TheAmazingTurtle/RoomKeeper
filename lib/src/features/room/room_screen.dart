@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../providers.dart';
 import '../../shared/delete_confirmation.dart';
+import '../../shared/roomkeeper_ui.dart';
 
 class RoomScreen extends ConsumerStatefulWidget {
   const RoomScreen({super.key});
@@ -60,10 +61,10 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
           }
         },
         icon: const Icon(Icons.add),
-        label: const Text('Room area'),
+        label: const Text('Add area'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      body: RoomKeeperPage(
+        bottomPadding: 96,
         children: [
           _RoomCanvas(
             layout: layout,
@@ -232,7 +233,7 @@ class _CanvasObject extends ConsumerWidget {
                           vertical: 3,
                         ),
                         child: Text(
-                          'Selected',
+                          'Editing',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: Theme.of(context).colorScheme.onPrimary,
@@ -373,7 +374,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
     final linkedItemPreview = linkedItems.take(6).toList();
     final hiddenLinkedItemCount = linkedItems.length - linkedItemPreview.length;
 
-    return Card(
+    return RoomKeeperCard(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -390,13 +391,13 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
-                        '${_kindLabel(object.kind)} - ${areaName ?? 'No linked area'}',
+                        '${_kindLabel(object.kind)} • ${areaName ?? 'Not linked to inventory'}',
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Rotate',
+                  tooltip: 'Rotate area',
                   icon: const Icon(Icons.rotate_right),
                   onPressed: () {
                     ref
@@ -417,11 +418,14 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
               ],
             ),
             const Divider(height: 24),
-            Text('Details', style: Theme.of(context).textTheme.titleSmall),
+            Text('Area details', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 12),
             TextField(
               controller: _labelController,
-              decoration: const InputDecoration(labelText: 'Room area label'),
+              decoration: const InputDecoration(
+                labelText: 'Area name',
+                hintText: 'Bed, study desk, clothes cabinet',
+              ),
               textCapitalization: TextCapitalization.words,
               onSubmitted: (_) => _applyDetails(),
             ),
@@ -431,7 +435,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _kind,
-                    decoration: const InputDecoration(labelText: 'Type'),
+                    decoration: const InputDecoration(labelText: 'Area type'),
                     items: _kindOptions,
                     onChanged: (value) {
                       if (value == null) return;
@@ -443,11 +447,13 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: _areaDropdownValue(_linkedAreaId),
-                    decoration: const InputDecoration(labelText: 'Linked area'),
+                    decoration: const InputDecoration(
+                      labelText: 'Inventory area',
+                    ),
                     items: [
                       const DropdownMenuItem<int>(
                         value: _noLinkedAreaValue,
-                        child: Text('None'),
+                        child: Text('No inventory link'),
                       ),
                       ...widget.areas.map(
                         (area) => DropdownMenuItem<int>(
@@ -485,12 +491,12 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
               child: FilledButton.icon(
                 onPressed: _applyDetails,
                 icon: const Icon(Icons.check),
-                label: const Text('Apply details'),
+                label: const Text('Save area'),
               ),
             ),
             const Divider(height: 28),
             Text(
-              'Position and size',
+              'Position & size',
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
@@ -539,7 +545,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Drag the selected area on the grid to move it, or use the corner handle and controls above for precise sizing.',
+              'Drag the selected area to move it. Use the corner handle or sliders for precise sizing.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const Divider(height: 28),
@@ -548,7 +554,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
-                  'Linked items',
+                  'Inventory in this area',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 Chip(
@@ -561,7 +567,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
             ),
             const SizedBox(height: 8),
             if (linkedItems.isEmpty)
-              const Text('No items in this area.')
+              const Text('No inventory items are linked to this area yet.')
             else ...[
               ...linkedItemPreview.map((item) => _LinkedItemTile(item: item)),
               if (hiddenLinkedItemCount > 0)
@@ -569,9 +575,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: Text('+$hiddenLinkedItemCount more linked'),
-                      ),
+                      Expanded(child: Text('+$hiddenLinkedItemCount more')),
                       TextButton.icon(
                         onPressed: _showLinkedItems,
                         icon: const Icon(Icons.list_alt_outlined),
@@ -633,7 +637,7 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Linked items for ${object.label}'),
+          title: Text('Inventory in ${object.label}'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView(
@@ -667,7 +671,7 @@ class _LinkedItemTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.inventory_2_outlined),
       title: Text(item.name),
-      subtitle: Text('Qty ${item.quantity} - ${item.condition}'),
+      subtitle: Text('Qty ${item.quantity} • ${item.condition}'),
     );
   }
 }
@@ -677,7 +681,7 @@ class _RoomSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return RoomKeeperCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -689,7 +693,7 @@ class _RoomSummary extends StatelessWidget {
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
-                'Select a room area on the layout to edit details, move it, resize it, rotate it, or delete it.',
+                'Tap an area on the layout to edit, move, resize, rotate, or remove it.',
               ),
             ),
           ],
@@ -717,8 +721,8 @@ class _CanvasHelpBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Text(
           hasObjects
-              ? 'Tap a room area to configure it. Drag to move; use the corner handle or details panel to resize.'
-              : 'Add your first room area, then link it to an inventory area.',
+              ? 'Tap an area to edit it. Drag to move, or use the corner handle to resize.'
+              : 'Add your first room area, then link it to inventory.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ),
@@ -739,7 +743,7 @@ class _EmptyCanvasMessage extends StatelessWidget {
       ),
       child: const Padding(
         padding: EdgeInsets.all(14),
-        child: Text('No room areas yet. Use Add room area to begin.'),
+        child: Text('No room areas yet. Use Add area to begin.'),
       ),
     );
   }
@@ -772,7 +776,7 @@ class _LayoutObjectDialogState extends ConsumerState<_LayoutObjectDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add room area'),
+      title: const Text('Add area to layout'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -782,7 +786,10 @@ class _LayoutObjectDialogState extends ConsumerState<_LayoutObjectDialog> {
               TextFormField(
                 controller: _labelController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Room area label'),
+                decoration: const InputDecoration(
+                  labelText: 'Area name',
+                  hintText: 'Bed, desk, cabinet',
+                ),
                 textCapitalization: TextCapitalization.words,
                 validator: (value) =>
                     value == null || value.trim().isEmpty ? 'Required' : null,
@@ -790,18 +797,18 @@ class _LayoutObjectDialogState extends ConsumerState<_LayoutObjectDialog> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _kind,
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: const InputDecoration(labelText: 'Area type'),
                 items: _kindOptions,
                 onChanged: (value) => setState(() => _kind = value ?? _kind),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 initialValue: _areaDropdownValue(_linkedAreaId),
-                decoration: const InputDecoration(labelText: 'Linked area'),
+                decoration: const InputDecoration(labelText: 'Inventory area'),
                 items: [
                   const DropdownMenuItem<int>(
                     value: _noLinkedAreaValue,
-                    child: Text('None'),
+                    child: Text('No inventory link'),
                   ),
                   ...widget.areas.map(
                     (area) => DropdownMenuItem<int>(
@@ -839,7 +846,7 @@ class _LayoutObjectDialogState extends ConsumerState<_LayoutObjectDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(onPressed: _save, child: const Text('Add area')),
       ],
     );
   }
