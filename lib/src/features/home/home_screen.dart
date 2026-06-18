@@ -22,19 +22,9 @@ class HomeScreen extends ConsumerWidget {
     final upcoming = reminders
         .where((reminder) => reminder.scheduledAt.isBefore(soon))
         .toList();
-    final expiringFoods = foods
-        .where(
-          (food) =>
-              food.expiryDate != null &&
-              food.expiryDate!.isBefore(soon.add(const Duration(days: 1))),
-        )
-        .toList();
-    final lowStockFoods = foods
-        .where(
-          (food) =>
-              food.lowStockThreshold != null &&
-              food.quantity <= food.lowStockThreshold!,
-        )
+    final foodAttention = foods
+        .map((food) => _FoodAttention.from(food, soon))
+        .where((attention) => attention.needsAttention)
         .toList();
     final openTodos = todos.where((todo) => !todo.isDone).toList();
 
@@ -138,32 +128,15 @@ class HomeScreen extends ConsumerWidget {
           _StatusSection(
             title: 'Food attention',
             emptyText: 'No expiring or low-stock food right now.',
-            children: [
-              ...expiringFoods
-                  .take(3)
-                  .map(
-                    (food) => ListTile(
-                      leading: const Icon(Icons.event_busy_outlined),
-                      title: Text(food.name),
-                      subtitle: Text('Expires ${formatDate(food.expiryDate)}'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.go('/food'),
-                    ),
+            children: foodAttention
+                .take(6)
+                .map(
+                  (attention) => _FoodAttentionTile(
+                    attention: attention,
+                    onTap: () => context.go('/food'),
                   ),
-              ...lowStockFoods
-                  .take(3)
-                  .map(
-                    (food) => ListTile(
-                      leading: const Icon(Icons.production_quantity_limits),
-                      title: Text(food.name),
-                      subtitle: Text(
-                        '${compactQuantity(food.quantity)} ${food.unit} left',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.go('/food'),
-                    ),
-                  ),
-            ],
+                )
+                .toList(),
           ),
           _StatusSection(
             title: 'Recent logs',
@@ -276,6 +249,61 @@ class HomeScreen extends ConsumerWidget {
 }
 
 enum _BackupAction { share, import }
+
+class _FoodAttention {
+  const _FoodAttention({
+    required this.food,
+    required this.isExpiring,
+    required this.isLowStock,
+  });
+
+  factory _FoodAttention.from(FoodStock food, DateTime soon) {
+    return _FoodAttention(
+      food: food,
+      isExpiring:
+          food.expiryDate != null &&
+          food.expiryDate!.isBefore(soon.add(const Duration(days: 1))),
+      isLowStock:
+          food.lowStockThreshold != null &&
+          food.quantity <= food.lowStockThreshold!,
+    );
+  }
+
+  final FoodStock food;
+  final bool isExpiring;
+  final bool isLowStock;
+
+  bool get needsAttention => isExpiring || isLowStock;
+}
+
+class _FoodAttentionTile extends StatelessWidget {
+  const _FoodAttentionTile({required this.attention, required this.onTap});
+
+  final _FoodAttention attention;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final food = attention.food;
+    return ListTile(
+      leading: Icon(
+        attention.isExpiring
+            ? Icons.event_busy_outlined
+            : Icons.production_quantity_limits,
+      ),
+      title: Text(food.name),
+      subtitle: Text(
+        [
+          if (attention.isExpiring) 'Expires ${formatDate(food.expiryDate)}',
+          if (attention.isLowStock)
+            '${compactQuantity(food.quantity)} ${food.unit} left',
+        ].join(' - '),
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+}
 
 class _MetricCard extends StatelessWidget {
   const _MetricCard({
