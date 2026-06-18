@@ -77,6 +77,14 @@ void main() {
     expect(find.text('Position and size'), findsOneWidget);
     expect(find.text('Rotation'), findsOneWidget);
 
+    await tester.tap(find.byTooltip('Delete room area'));
+    await tester.pump();
+
+    expect(find.text('Delete room area?'), findsOneWidget);
+    expect(find.text('Delete "Bed"? This cannot be undone.'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../providers.dart';
+import '../../shared/delete_confirmation.dart';
 
 class RoomScreen extends ConsumerStatefulWidget {
   const RoomScreen({super.key});
@@ -580,6 +581,12 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
   }
 
   Future<void> _deleteObject() async {
+    final confirmed = await confirmDelete(
+      context: context,
+      title: 'Delete room area?',
+      itemName: object.label,
+    );
+    if (!confirmed) return;
     await ref.read(repositoryProvider).deleteLayoutObject(object.id);
     widget.onDeleted();
     _showSnackBar('Room area deleted.');

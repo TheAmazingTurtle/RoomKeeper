@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../providers.dart';
+import '../../shared/delete_confirmation.dart';
 
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
@@ -170,8 +171,20 @@ class _InventoryTile extends ConsumerWidget {
           IconButton(
             tooltip: 'Delete item',
             icon: const Icon(Icons.delete_outline),
-            onPressed: () =>
-                ref.read(repositoryProvider).deleteInventoryItem(item.id),
+            onPressed: () async {
+              final confirmed = await confirmDelete(
+                context: context,
+                title: 'Delete room item?',
+                itemName: item.name,
+              );
+              if (!confirmed) return;
+              await ref.read(repositoryProvider).deleteInventoryItem(item.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${item.name} deleted.')),
+                );
+              }
+            },
           ),
         ],
       ),

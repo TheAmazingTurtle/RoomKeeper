@@ -89,4 +89,48 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('food delete asks for confirmation with food name', (
+    tester,
+  ) async {
+    await initializeDateFormatting('en_PH');
+    await tester.binding.setSurfaceSize(const Size(800, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime(2026);
+    final food = FoodStock(
+      id: 1,
+      name: 'Eggs',
+      areaId: null,
+      category: 'Fridge',
+      quantity: 12,
+      unit: 'pcs',
+      expiryDate: null,
+      lowStockThreshold: null,
+      notes: null,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          areasProvider.overrideWithValue(const AsyncValue.data(<Area>[])),
+          foodProvider.overrideWithValue(AsyncValue.data([food])),
+        ],
+        child: const MaterialApp(home: FoodScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Delete food'));
+    await tester.pump();
+
+    expect(find.text('Delete food item?'), findsOneWidget);
+    expect(find.text('Delete "Eggs"? This cannot be undone.'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
