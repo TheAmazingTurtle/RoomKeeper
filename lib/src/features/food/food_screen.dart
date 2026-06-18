@@ -90,7 +90,20 @@ class _FoodTile extends ConsumerWidget {
               : Theme.of(context).colorScheme.secondaryContainer,
           child: Icon(expired ? Icons.warning_amber_rounded : Icons.kitchen),
         ),
-        title: Text(food.name),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(food.name),
+            if (expiresSoon || lowStock) ...[
+              const SizedBox(height: 6),
+              _FoodStatusChips(
+                expired: expired,
+                expiresSoon: expiresSoon,
+                lowStock: lowStock,
+              ),
+            ],
+          ],
+        ),
         onTap: () => _showFoodDetails(context, food, area),
         subtitle: Text(
           [
@@ -107,16 +120,6 @@ class _FoodTile extends ConsumerWidget {
         trailing: Wrap(
           spacing: 6,
           children: [
-            if (expiresSoon)
-              Chip(
-                label: Text(expired ? 'Expired' : 'Expiring'),
-                visualDensity: VisualDensity.compact,
-              ),
-            if (lowStock)
-              const Chip(
-                label: Text('Low stock'),
-                visualDensity: VisualDensity.compact,
-              ),
             IconButton(
               tooltip: 'View food details',
               icon: const Icon(Icons.info_outline),
@@ -204,6 +207,38 @@ class _FoodTile extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _FoodStatusChips extends StatelessWidget {
+  const _FoodStatusChips({
+    required this.expired,
+    required this.expiresSoon,
+    required this.lowStock,
+  });
+
+  final bool expired;
+  final bool expiresSoon;
+  final bool lowStock;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        if (expiresSoon)
+          Chip(
+            label: Text(expired ? 'Expired' : 'Expiring'),
+            visualDensity: VisualDensity.compact,
+          ),
+        if (lowStock)
+          const Chip(
+            label: Text('Low stock'),
+            visualDensity: VisualDensity.compact,
+          ),
+      ],
     );
   }
 }
