@@ -369,6 +369,10 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
         break;
       }
     }
+    final linkedItems = widget.linkedItems;
+    final linkedItemPreview = linkedItems.take(6).toList();
+    final hiddenLinkedItemCount = linkedItems.length - linkedItemPreview.length;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -539,24 +543,44 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const Divider(height: 28),
-            Text('Linked items', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            if (widget.linkedItems.isEmpty)
-              const Text('No items in this area.')
-            else
-              ...widget.linkedItems
-                  .take(6)
-                  .map(
-                    (item) => ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.inventory_2_outlined),
-                      title: Text(item.name),
-                      subtitle: Text(
-                        'Qty ${item.quantity} - ${item.condition}',
-                      ),
-                    ),
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'Linked items',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Chip(
+                  label: Text(
+                    '${linkedItems.length} ${linkedItems.length == 1 ? 'item' : 'items'}',
                   ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (linkedItems.isEmpty)
+              const Text('No items in this area.')
+            else ...[
+              ...linkedItemPreview.map((item) => _LinkedItemTile(item: item)),
+              if (hiddenLinkedItemCount > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('+$hiddenLinkedItemCount more linked'),
+                      ),
+                      TextButton.icon(
+                        onPressed: _showLinkedItems,
+                        icon: const Icon(Icons.list_alt_outlined),
+                        label: const Text('View all'),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -602,6 +626,49 @@ class _SelectedObjectPanelState extends ConsumerState<_SelectedObjectPanel> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showLinkedItems() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Linked items for ${object.label}'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: widget.linkedItems
+                  .map((item) => _LinkedItemTile(item: item))
+                  .toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LinkedItemTile extends StatelessWidget {
+  const _LinkedItemTile({required this.item});
+
+  final InventoryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.inventory_2_outlined),
+      title: Text(item.name),
+      subtitle: Text('Qty ${item.quantity} - ${item.condition}'),
+    );
   }
 }
 
