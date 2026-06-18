@@ -129,7 +129,10 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byTooltip('View item details'));
+    expect(find.byTooltip('Remove one Rice cooker'), findsOneWidget);
+    expect(find.byTooltip('Add one Rice cooker'), findsOneWidget);
+
+    await tester.tap(find.text('Rice cooker'));
     await tester.pump();
 
     expect(find.text('Notes'), findsOneWidget);
@@ -170,8 +173,8 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byTooltip('Delete item'));
-    await tester.pump();
+    await tester.drag(find.text('Rice cooker'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
 
     expect(find.text('Delete room item?'), findsOneWidget);
     expect(

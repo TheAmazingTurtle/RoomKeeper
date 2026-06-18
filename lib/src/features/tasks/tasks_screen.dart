@@ -222,56 +222,40 @@ class _LaundryBasketTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
+    final tile = ListTile(
       leading: const Icon(Icons.local_laundry_service_outlined),
       title: Text(item.name),
       subtitle: item.isDefault ? const Text('Everyday clothes') : null,
-      trailing: SizedBox(
-        width: 156,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            IconButton.filledTonal(
-              tooltip: 'Remove one ${item.name}',
-              icon: const Icon(Icons.remove),
-              onPressed: item.count == 0
-                  ? null
-                  : () => ref
-                        .read(repositoryProvider)
-                        .changeLaundryBasketCount(item, -1),
-            ),
-            SizedBox(
-              width: 40,
-              child: Text(
-                '${item.count}',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            IconButton.filledTonal(
-              tooltip: 'Add one ${item.name}',
-              icon: const Icon(Icons.add),
-              onPressed: () => ref
-                  .read(repositoryProvider)
-                  .changeLaundryBasketCount(item, 1),
-            ),
-          ],
-        ),
+      trailing: QuantityStepper(
+        value: '${item.count}',
+        decrementTooltip: 'Remove one ${item.name}',
+        incrementTooltip: 'Add one ${item.name}',
+        canDecrement: item.count > 0,
+        onDecrement: () =>
+            ref.read(repositoryProvider).changeLaundryBasketCount(item, -1),
+        onIncrement: () =>
+            ref.read(repositoryProvider).changeLaundryBasketCount(item, 1),
       ),
-      onLongPress: item.isDefault
-          ? null
-          : () async {
-              final confirmed = await confirmDelete(
-                context: context,
-                title: 'Delete laundry item?',
-                itemName: item.name,
-              );
-              if (confirmed) {
-                await ref
-                    .read(repositoryProvider)
-                    .deleteLaundryBasketItem(item.id);
-              }
-            },
+    );
+    if (item.isDefault) return tile;
+    return Dismissible(
+      key: ValueKey('laundry-basket-${item.id}'),
+      direction: DismissDirection.endToStart,
+      background: const DeleteSwipeBackground(),
+      confirmDismiss: (_) => confirmDelete(
+        context: context,
+        title: 'Delete laundry item?',
+        itemName: item.name,
+      ),
+      onDismissed: (_) async {
+        await ref.read(repositoryProvider).deleteLaundryBasketItem(item.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('${item.name} deleted.')));
+        }
+      },
+      child: tile,
     );
   }
 }

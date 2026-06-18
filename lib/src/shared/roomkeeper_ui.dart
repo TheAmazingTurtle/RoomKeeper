@@ -218,3 +218,76 @@ class ActionChipLabel extends StatelessWidget {
     );
   }
 }
+
+class QuantityStepper extends StatelessWidget {
+  const QuantityStepper({
+    super.key,
+    required this.value,
+    required this.decrementTooltip,
+    required this.incrementTooltip,
+    required this.onDecrement,
+    required this.onIncrement,
+    this.canDecrement = true,
+  });
+
+  final String value;
+  final String decrementTooltip;
+  final String incrementTooltip;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+  final bool canDecrement;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 132,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton.filledTonal(
+            tooltip: decrementTooltip,
+            icon: const Icon(Icons.remove),
+            onPressed: canDecrement ? onDecrement : null,
+          ),
+          SizedBox(
+            width: 36,
+            child: Text(
+              value,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          IconButton.filledTonal(
+            tooltip: incrementTooltip,
+            icon: const Icon(Icons.add),
+            onPressed: onIncrement,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DeleteSwipeBackground extends StatelessWidget {
+  const DeleteSwipeBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: colorScheme.errorContainer),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 20),
+          child: Icon(
+            Icons.delete_outline,
+            color: colorScheme.onErrorContainer,
+          ),
+        ),
+      ),
+    );
+  }
+}
