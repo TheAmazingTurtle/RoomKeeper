@@ -111,15 +111,27 @@ class _TodoTile extends ConsumerWidget {
           if (todo.notes != null) todo.notes!,
         ].join(' - '),
       ),
-      secondary: IconButton(
-        tooltip: 'Delete task',
-        icon: const Icon(Icons.delete_outline),
-        onPressed: () async {
-          await ref
-              .read(reminderServiceProvider)
-              .cancelOwnerReminders(ownerType: 'todo', ownerId: todo.id);
-          await ref.read(repositoryProvider).deleteTodoItem(todo.id);
-        },
+      secondary: Wrap(
+        children: [
+          IconButton(
+            tooltip: 'Edit task',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => _TodoDialog(todo: todo),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Delete task',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () async {
+              await ref
+                  .read(reminderServiceProvider)
+                  .cancelOwnerReminders(ownerType: 'todo', ownerId: todo.id);
+              await ref.read(repositoryProvider).deleteTodoItem(todo.id);
+            },
+          ),
+        ],
       ),
       controlAffinity: ListTileControlAffinity.leading,
     );
@@ -165,6 +177,33 @@ class _LaundryTab extends ConsumerWidget {
                             'Next ${formatDateTime(log.nextReminderAt)}',
                           if (log.notes != null) log.notes!,
                         ].join(' - '),
+                      ),
+                      trailing: Wrap(
+                        children: [
+                          IconButton(
+                            tooltip: 'Edit laundry log',
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => showDialog<void>(
+                              context: context,
+                              builder: (_) => _LaundryDialog(log: log),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Delete laundry log',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              await ref
+                                  .read(reminderServiceProvider)
+                                  .cancelOwnerReminders(
+                                    ownerType: 'laundry',
+                                    ownerId: log.id,
+                                  );
+                              await ref
+                                  .read(repositoryProvider)
+                                  .deleteLaundryLog(log.id);
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   )
@@ -214,13 +253,40 @@ class _PaymentsTab extends ConsumerWidget {
                       ),
                       subtitle: Text(
                         [
+                          formatPesoCents(payment.amountCents),
                           'Paid ${formatDate(payment.paidAt)}',
                           if (payment.nextReminderAt != null)
                             'Next ${formatDateTime(payment.nextReminderAt)}',
                           if (payment.notes != null) payment.notes!,
                         ].join(' - '),
                       ),
-                      trailing: Text(formatPesoCents(payment.amountCents)),
+                      trailing: Wrap(
+                        children: [
+                          IconButton(
+                            tooltip: 'Edit payment log',
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => showDialog<void>(
+                              context: context,
+                              builder: (_) => _PaymentDialog(payment: payment),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Delete payment log',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              await ref
+                                  .read(reminderServiceProvider)
+                                  .cancelOwnerReminders(
+                                    ownerType: 'payment',
+                                    ownerId: payment.id,
+                                  );
+                              await ref
+                                  .read(repositoryProvider)
+                                  .deletePaymentLog(payment.id);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   )
                   .toList(),
@@ -232,7 +298,9 @@ class _PaymentsTab extends ConsumerWidget {
 }
 
 class _TodoDialog extends ConsumerStatefulWidget {
-  const _TodoDialog();
+  const _TodoDialog({this.todo});
+
+  final TodoItem? todo;
 
   @override
   ConsumerState<_TodoDialog> createState() => _TodoDialogState();
@@ -245,6 +313,19 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
   DateTime? _dueAt;
   DateTime? _reminderAt;
 
+  bool get _isEditing => widget.todo != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final todo = widget.todo;
+    if (todo == null) return;
+    _titleController.text = todo.title;
+    _notesController.text = todo.notes ?? '';
+    _dueAt = todo.dueAt;
+    _reminderAt = todo.reminderAt;
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -255,7 +336,7 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add to-do'),
+      title: Text(_isEditing ? 'Edit to-do' : 'Add to-do'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -320,14 +401,27 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final id = await ref
-        .read(repositoryProvider)
-        .addTodoItem(
-          title: _titleController.text,
-          notes: _notesController.text,
-          dueAt: _dueAt,
-          reminderAt: _reminderAt,
-        );
+    final id =
+        widget.todo?.id ??
+        await ref
+            .read(repositoryProvider)
+            .addTodoItem(
+              title: _titleController.text,
+              notes: _notesController.text,
+              dueAt: _dueAt,
+              reminderAt: _reminderAt,
+            );
+    if (_isEditing) {
+      await ref
+          .read(repositoryProvider)
+          .updateTodoItem(
+            id: id,
+            title: _titleController.text,
+            notes: _notesController.text,
+            dueAt: _dueAt,
+            reminderAt: _reminderAt,
+          );
+    }
     await ref
         .read(reminderServiceProvider)
         .rescheduleOwnerReminder(
@@ -344,7 +438,9 @@ class _TodoDialogState extends ConsumerState<_TodoDialog> {
 }
 
 class _LaundryDialog extends ConsumerStatefulWidget {
-  const _LaundryDialog();
+  const _LaundryDialog({this.log});
+
+  final LaundryLog? log;
 
   @override
   ConsumerState<_LaundryDialog> createState() => _LaundryDialogState();
@@ -355,6 +451,18 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
   DateTime _completedAt = DateTime.now();
   DateTime? _nextReminderAt = DateTime.now().add(const Duration(days: 7));
 
+  bool get _isEditing => widget.log != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final log = widget.log;
+    if (log == null) return;
+    _completedAt = log.completedAt;
+    _nextReminderAt = log.nextReminderAt;
+    _notesController.text = log.notes ?? '';
+  }
+
   @override
   void dispose() {
     _notesController.dispose();
@@ -364,7 +472,7 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Log laundry'),
+      title: Text(_isEditing ? 'Edit laundry log' : 'Log laundry'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -411,13 +519,25 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
   }
 
   Future<void> _save() async {
-    final id = await ref
-        .read(repositoryProvider)
-        .addLaundryLog(
-          completedAt: _completedAt,
-          nextReminderAt: _nextReminderAt,
-          notes: _notesController.text,
-        );
+    final id =
+        widget.log?.id ??
+        await ref
+            .read(repositoryProvider)
+            .addLaundryLog(
+              completedAt: _completedAt,
+              nextReminderAt: _nextReminderAt,
+              notes: _notesController.text,
+            );
+    if (_isEditing) {
+      await ref
+          .read(repositoryProvider)
+          .updateLaundryLog(
+            id: id,
+            completedAt: _completedAt,
+            nextReminderAt: _nextReminderAt,
+            notes: _notesController.text,
+          );
+    }
     await ref
         .read(reminderServiceProvider)
         .rescheduleOwnerReminder(
@@ -432,7 +552,9 @@ class _LaundryDialogState extends ConsumerState<_LaundryDialog> {
 }
 
 class _PaymentDialog extends ConsumerStatefulWidget {
-  const _PaymentDialog();
+  const _PaymentDialog({this.payment});
+
+  final PaymentLog? payment;
 
   @override
   ConsumerState<_PaymentDialog> createState() => _PaymentDialogState();
@@ -447,6 +569,21 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   DateTime _paidAt = DateTime.now();
   DateTime? _nextReminderAt = DateTime.now().add(const Duration(days: 30));
 
+  bool get _isEditing => widget.payment != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final payment = widget.payment;
+    if (payment == null) return;
+    _billType = payment.billType;
+    _billingMonth = _parseBillingMonth(payment.billingMonth);
+    _paidAt = payment.paidAt;
+    _nextReminderAt = payment.nextReminderAt;
+    _amountController.text = (payment.amountCents / 100).toStringAsFixed(2);
+    _notesController.text = payment.notes ?? '';
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -457,7 +594,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Log payment'),
+      title: Text(_isEditing ? 'Edit payment log' : 'Log payment'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -559,16 +696,32 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final billingMonth = monthFormat.format(_billingMonth);
-    final id = await ref
-        .read(repositoryProvider)
-        .addPaymentLog(
-          billType: _billType,
-          billingMonth: billingMonth,
-          paidAt: _paidAt,
-          amountCents: parsePesoToCents(_amountController.text),
-          nextReminderAt: _nextReminderAt,
-          notes: _notesController.text,
-        );
+    final amountCents = parsePesoToCents(_amountController.text);
+    final id =
+        widget.payment?.id ??
+        await ref
+            .read(repositoryProvider)
+            .addPaymentLog(
+              billType: _billType,
+              billingMonth: billingMonth,
+              paidAt: _paidAt,
+              amountCents: amountCents,
+              nextReminderAt: _nextReminderAt,
+              notes: _notesController.text,
+            );
+    if (_isEditing) {
+      await ref
+          .read(repositoryProvider)
+          .updatePaymentLog(
+            id: id,
+            billType: _billType,
+            billingMonth: billingMonth,
+            paidAt: _paidAt,
+            amountCents: amountCents,
+            nextReminderAt: _nextReminderAt,
+            notes: _notesController.text,
+          );
+    }
     await ref
         .read(reminderServiceProvider)
         .rescheduleOwnerReminder(
@@ -580,6 +733,16 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
         );
     if (mounted) Navigator.pop(context);
   }
+}
+
+DateTime _parseBillingMonth(String value) {
+  final parts = value.split('-');
+  final year = int.tryParse(parts.first);
+  final month = parts.length > 1 ? int.tryParse(parts[1]) : null;
+  if (year == null || month == null) {
+    return DateTime(DateTime.now().year, DateTime.now().month);
+  }
+  return DateTime(year, month);
 }
 
 class _DateActionTile extends StatelessWidget {
