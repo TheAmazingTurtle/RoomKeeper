@@ -182,14 +182,74 @@ class _ItemPhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     final file = path == null ? null : File(path!);
     if (file != null && file.existsSync()) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.file(file, width: 48, height: 48, fit: BoxFit.cover),
+      return Tooltip(
+        message: 'Open photo preview',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _showPhotoPreview(context, file),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              file,
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.square(
+                dimension: 48,
+                child: Icon(Icons.broken_image_outlined),
+              ),
+            ),
+          ),
+        ),
       );
     }
     return CircleAvatar(
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       child: const Icon(Icons.inventory_2_outlined),
+    );
+  }
+
+  void _showPhotoPreview(BuildContext context, File file) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560, maxHeight: 680),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    tooltip: 'Close photo preview',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: InteractiveViewer(
+                      minScale: 0.75,
+                      maxScale: 4,
+                      child: Image.file(
+                        file,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('This photo could not be loaded.'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

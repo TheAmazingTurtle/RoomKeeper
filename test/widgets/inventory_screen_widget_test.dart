@@ -46,4 +46,49 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('room item with a missing photo path falls back gracefully', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const kitchen = Area(
+      id: 1,
+      name: 'Kitchen',
+      type: 'kitchen',
+      colorHex: '#F97316',
+      sortOrder: 0,
+    );
+    final now = DateTime(2026);
+    final items = <InventoryItem>[
+      InventoryItem(
+        id: 1,
+        name: 'Rice cooker',
+        areaId: kitchen.id,
+        quantity: 1,
+        condition: 'Good',
+        notes: null,
+        photoPath: 'missing-file.png',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          areasProvider.overrideWithValue(const AsyncValue.data([kitchen])),
+          inventoryProvider.overrideWithValue(AsyncValue.data(items)),
+        ],
+        child: const MaterialApp(home: InventoryScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Open photo preview'), findsNothing);
+    expect(find.byIcon(Icons.inventory_2_outlined), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
